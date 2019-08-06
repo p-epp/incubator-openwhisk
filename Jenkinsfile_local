@@ -66,26 +66,26 @@ timeout(time: 12, unit: 'HOURS') {
                         }
 
                         dir("ansible/${ansibleEnvironment}") {
-                            sh "cp ${hostName}.j2.ini hosts.j2.ini"
+                            //sh "cp ${hostName}.j2.ini hosts.j2.ini"
                         }
 
                         dir("ansible/${ansibleEnvironment}/group_vars") {
-                            sh "cp ${hostName} all"
+                            //sh "cp ${hostName} all"
                         }
 
                         dir("ansible") {
-                            sh 'ansible-playbook -i ${ansibleEnvironment} setup.yml'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e mode=clean'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} apigateway.yml -e mode=clean'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} couchdb.yml -e mode=clean'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} couchdb.yml'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} initdb.yml'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} wipe.yml'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} apigateway.yml'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e lean=true'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} properties.yml'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} routemgmt.yml'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} postdeploy.yml'
+                            sh "ansible-playbook -i ${ansibleEnvironment} setup.yml"
+                            sh "ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e mode=clean"
+                            sh "ansible-playbook -i ${ansibleEnvironment} apigateway.yml -e mode=clean"
+                            sh "ansible-playbook -i ${ansibleEnvironment} couchdb.yml -e mode=clean"
+                            sh "ansible-playbook -i ${ansibleEnvironment} couchdb.yml"
+                            sh "ansible-playbook -i ${ansibleEnvironment} initdb.yml"
+                            sh "ansible-playbook -i ${ansibleEnvironment} wipe.yml"
+                            sh "ansible-playbook -i ${ansibleEnvironment} apigateway.yml"
+                            sh "ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e lean=true"
+                            sh "ansible-playbook -i ${ansibleEnvironment} properties.yml"
+                            sh "ansible-playbook -i ${ansibleEnvironment} routemgmt.yml"
+                            sh "ansible-playbook -i ${ansibleEnvironment} postdeploy.yml"
                         }
                     }
 
@@ -100,8 +100,8 @@ timeout(time: 12, unit: 'HOURS') {
 
                     stage('Deploy full Openwhisk') {
                         dir("ansible") {
-                            sh 'ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e mode=clean'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} openwhisk.yml'
+                            sh "ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e mode=clean"
+                            sh "ansible-playbook -i ${ansibleEnvironment} openwhisk.yml"
                         }
                     }
 
@@ -134,9 +134,9 @@ timeout(time: 12, unit: 'HOURS') {
                     println("Executing finally block")
                     stage('Clean up') {
                         dir("ansible") {
-                            sh 'ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e mode=clean'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} apigateway.yml -e mode=clean'
-                            sh 'ansible-playbook -i ${ansibleEnvironment} couchdb.yml -e mode=clean'
+                            sh "ansible-playbook -i ${ansibleEnvironment} openwhisk.yml -e mode=clean"
+                            sh "ansible-playbook -i ${ansibleEnvironment} apigateway.yml -e mode=clean"
+                            sh "ansible-playbook -i ${ansibleEnvironment} couchdb.yml -e mode=clean"
                         }
                     }
                     step([$class: 'JUnitResultArchiver', testResults: '**/test*/**/TEST-*.xml'])
