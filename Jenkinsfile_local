@@ -38,6 +38,7 @@ timeout(time: 12, unit: 'HOURS') {
                     deleteDir()
                     stage('Checkout') {
                         checkout scm
+			echo "${ansibleEnvironment}"
                     }
 
                     stage('Build') {
@@ -61,7 +62,7 @@ timeout(time: 12, unit: 'HOURS') {
                         dir("ansible") {
                             // Copy the jenkins ansible configuration under the directory ansible. This can make sure the SSH is used to
                             // access the VMs of invokers by the VM of the controller.
-                            sh '[ -f "environments/jenkins/ansible_jenkins.cfg" ] && cp environments/jenkins/ansible_jenkins.cfg ansible.cfg'
+                            /*sh '[ -f "${ansibleEnvironment}/ansible_jenkins.cfg" ] && cp environments/jenkins/ansible_jenkins.cfg ansible.cfg'*/
                         }
 
                         dir("ansible/${ansibleEnvironment}") {
