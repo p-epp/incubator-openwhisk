@@ -61,7 +61,7 @@ timeout(time: 12, unit: 'HOURS') {
                     }
 
                     stage('Deploy Lean') {
-                        if (${ansibleEnvironment} == "environments/jenkins") {
+                        if (ansibleEnvironment == "environments/jenkins") {
                             dir("ansible") {
                                 // Copy the jenkins ansible configuration under the directory ansible. This can make sure the SSH is used to
                                 // access the VMs of invokers by the VM of the controller.
