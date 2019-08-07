@@ -29,7 +29,7 @@ timeout(time: 12, unit: 'HOURS') {
         def jobName = sh(returnStdout: true, script: 'echo $JOB_NAME').trim()
         def jobSpace = "${home}/jenkins-slave/workspace/${jobName}"
         def ansibleEnvironment = "environments/local"
-        if (${ansibleEnvironment} == "environments/jenkins") {
+        if (ansibleEnvironment == "environments/jenkins") {
             domainName = hostName+".apache.org"
         }
 
