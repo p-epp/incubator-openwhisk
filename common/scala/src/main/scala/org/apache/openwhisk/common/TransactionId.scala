@@ -60,7 +60,6 @@ case class TransactionId private (meta: TransactionMetadata) extends AnyVal {
     }
 
     MetricEmitter.emitCounterMetric(marker)
-
   }
 
   /**

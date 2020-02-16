@@ -57,7 +57,7 @@ trait LoadBalancer {
    *         The future is guaranteed to complete within the declared action time limit
    *         plus a grace period (see activeAckTimeoutGrace).
    */
-  def publish(action: ExecutableWhiskActionMetaData, msg: ActivationMessage)(
+  def publish(action: ExecutableWhiskActionMetaData, msg: ActivationMessage, initOnly: Boolean)(
     implicit transid: TransactionId): Future[Future[Either[ActivationId, WhiskActivation]]]
 
   /**

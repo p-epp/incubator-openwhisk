@@ -61,7 +61,8 @@ case object Removing extends ContainerState
 
 // Data
 /** Base data type */
-sealed abstract class ContainerData(val lastUsed: Instant, val memoryLimit: ByteSize, val activeActivationCount: Int) {
+sealed abstract class ContainerData(val lastUsed: Instant, val memoryLimit: ByteSize, val activeActivationCount: Int)
+{
 
   /** When ContainerProxy in this state is scheduled, it may result in a new state (ContainerData)*/
   def nextRun(r: Run): ContainerData
@@ -83,7 +84,8 @@ sealed abstract class ContainerData(val lastUsed: Instant, val memoryLimit: Byte
 sealed abstract class ContainerNotStarted(override val lastUsed: Instant,
                                           override val memoryLimit: ByteSize,
                                           override val activeActivationCount: Int)
-    extends ContainerData(lastUsed, memoryLimit, activeActivationCount) {
+    extends ContainerData(lastUsed, memoryLimit, activeActivationCount)
+{
   override def getContainer = None
   override val initingState = "cold"
 }
@@ -93,7 +95,8 @@ sealed abstract class ContainerStarted(val container: Container,
                                        override val lastUsed: Instant,
                                        override val memoryLimit: ByteSize,
                                        override val activeActivationCount: Int)
-    extends ContainerData(lastUsed, memoryLimit, activeActivationCount) {
+    extends ContainerData(lastUsed, memoryLimit, activeActivationCount)
+{
   override def getContainer = Some(container)
 }
 
@@ -174,6 +177,7 @@ case class WarmedData(override val container: Container,
 // Events received by the actor
 case class Start(exec: CodeExec[_], memoryLimit: ByteSize)
 case class Run(action: ExecutableWhiskAction, msg: ActivationMessage, retryLogDeadline: Option[Deadline] = None)
+case class Initialize(action: ExecutableWhiskAction, msg: ActivationMessage, retryLogDeadline: Option[Deadline] = None)
 case object Remove
 
 // Events sent by the actor
@@ -317,7 +321,56 @@ class ContainerProxy(factory: (TransactionId,
         }
         .pipeTo(self)
 
-      goto(Running)
+        goto(Running)
+
+    case Event(job: Initialize, _) =>
+      implicit val transid = job.msg.transid
+      activeCount += 1
+      // create a new container
+      val container = factory(
+        job.msg.transid,
+        ContainerProxy.containerName(instance, job.msg.user.namespace.name.asString, job.action.name.asString),
+        job.action.exec.image,
+        job.action.exec.pull,
+        job.action.limits.memory.megabytes.MB,
+        poolConfig.cpuShare(job.action.limits.memory.megabytes.MB),
+        Some(job.action))
+
+      // container factory will either yield a new container ready to execute the action, or
+      // starting up the container failed; for the latter, it's either an internal error starting
+      // a container or a docker action that is not conforming to the required action API
+      container
+        .andThen {
+          case Success(container) =>
+            // the container is ready to accept an activation; register it as PreWarmed; this
+            // normalizes the life cycle for containers and their cleanup when activations fail
+            self ! PreWarmCompleted(
+              PreWarmedData(container, job.action.exec.kind, job.action.limits.memory.megabytes.MB, 1))
+
+          case Failure(t) =>
+            // the container did not come up cleanly, so disambiguate the failure mode and then cleanup
+            // the failure is either the system fault, or for docker actions, the application/developer fault
+            val response = t match {
+              case WhiskContainerStartupError(msg) => ActivationResponse.whiskError(msg)
+              case BlackboxStartupError(msg)       => ActivationResponse.developerError(msg)
+              case _                               => ActivationResponse.whiskError(Messages.resourceProvisionError)
+            }
+            val context = UserContext(job.msg.user)
+            // construct an appropriate activation and record it in the datastore,
+            // also update the feed and active ack; the container cleanup is queued
+            // implicitly via a FailureMessage which will be processed later when the state
+            // transitions to Running
+
+            // for now no activation
+
+        }
+        .flatMap { container =>
+          // now attempt to inject the user code and run the action
+          //initializeAndRun(container, job)
+          initializeIt(container, job)
+        }
+
+        goto(Running)
   }
 
   when(Starting) {
@@ -341,6 +394,13 @@ class ContainerProxy(factory: (TransactionId,
       initializeAndRun(data.container, job)
         .map(_ => RunCompleted)
         .pipeTo(self)
+      goto(Running) using PreWarmedData(data.container, data.kind, data.memoryLimit, 1)
+
+    case Event(job: Initialize, data: PreWarmedData) =>
+      implicit val transid = job.msg.transid
+      activeCount += 1
+      initializeIt(data.container, job)
+        .map(_=> InitCompleted)
       goto(Running) using PreWarmedData(data.container, data.kind, data.memoryLimit, 1)
 
     case Event(Remove, data: PreWarmedData) => destroyContainer(data.container)
@@ -386,6 +446,10 @@ class ContainerProxy(factory: (TransactionId,
         .pipeTo(self)
       stay() using data
 
+    case Event(job: Initialize, data: WarmedData) =>
+      logging.info(this, s"Trying to Initialize Warm Container ${data.container}. Dropping Request.")
+      stay() using data
+
     // Failed after /init (the first run failed)
     case Event(_: FailureMessage, data: PreWarmedData) =>
       activeCount -= 1
@@ -416,6 +480,10 @@ class ContainerProxy(factory: (TransactionId,
         .pipeTo(self)
 
       goto(Running) using data
+
+    case Event(job: Initialize, data: WarmedData) =>
+      logging.info(this, s"Trying to Initialize Warm Container ${data.container}. Dropping Request.")
+      stay() using data
 
     // pause grace timed out
     case Event(StateTimeout, data: WarmedData) =>
@@ -461,6 +529,10 @@ class ContainerProxy(factory: (TransactionId,
   when(Removing) {
     case Event(job: Run, _) =>
       // Send the job back to the pool to be rescheduled
+      context.parent ! job
+      stay
+    case Event(job: Initialize, _) =>
+      // Do the same for pure Inits
       context.parent ! job
       stay
     case Event(ContainerRemoved, _)  => stop()
@@ -540,6 +612,7 @@ class ContainerProxy(factory: (TransactionId,
       runBuffer = immutable.Queue.empty[Run]
     }
   }
+
 
   /**
    * Runs the job, initialize first if necessary.
@@ -710,6 +783,59 @@ class ContainerProxy(factory: (TransactionId,
       case Left(error) => Future.failed(error)
       case Right(act)  => Future.successful(act)
     }
+  }
+
+  // Do as above, without the Runpart, limited storing of information because.
+
+  def initializeIt(container: Container, job: Initialize)(implicit tid: TransactionId): Future[Any] = {
+    val actionTimeout = job.action.limits.timeout.duration
+    val (env, parameters) = ContainerProxy.partitionArguments(job.msg.content, job.msg.initArgs)
+
+    val environment = Map(
+      "namespace" -> job.msg.user.namespace.name.toJson,
+      "action_name" -> job.msg.action.qualifiedNameWithLeadingSlash.toJson,
+      "activation_id" -> job.msg.activationId.toString.toJson,
+      "transaction_id" -> job.msg.transid.id.toJson)
+
+    // if the action requests the api key to be injected into the action context, add it here;
+    // treat a missing annotation as requesting the api key for backward compatibility
+    val authEnvironment = {
+      if (job.action.annotations.isTruthy(Annotations.ProvideApiKeyAnnotationName, valueForNonExistent = true)) {
+        job.msg.user.authkey.toEnvironment.fields
+      } else Map.empty
+    }
+    val initialize = stateData match {
+        case data: WarmedData =>
+          Future.successful(None)
+        case _ =>
+          val owEnv = (authEnvironment ++ environment + ("deadline" -> (Instant.now.toEpochMilli + actionTimeout.toMillis).toString.toJson)) map {
+            case (key, value) => "__OW_" + key.toUpperCase -> value
+          }
+
+          container
+            .initialize(
+              job.action.containerInitializer(env ++ owEnv),
+              actionTimeout,
+              job.action.limits.concurrency.maxConcurrent)
+            .map(Some(_))
+    }
+    //initialize
+    //.map(_ => RunCompleted)
+    val activation = initialize
+      .flatMap { initInterval =>
+        //immediately setup warmedData for use (before first execution) so that concurrent actions can use it asap
+        if (initInterval.isDefined) {
+          self ! InitCompleted(WarmedData(container, job.msg.user.namespace.name, job.action, Instant.now, 1))
+        }
+        Future.successful(())
+    }
+    .recover {
+          case t =>
+        // Actually, this should never happen - but we want to make sure to not miss a problem
+        logging.error(this, s"caught unexpected error while running activation: ${t}")
+        Future.failed(t)
+    }
+    activation
   }
 }
 

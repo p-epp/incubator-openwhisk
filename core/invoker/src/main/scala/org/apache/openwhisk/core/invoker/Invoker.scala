@@ -144,7 +144,9 @@ object Invoker {
     initKamon(assignedInvokerId)
 
     val topicBaseName = "invoker"
+    val initTopicBaseName = "invoker_init"
     val topicName = topicBaseName + assignedInvokerId
+    val initTopicName = initTopicBaseName + assignedInvokerId
 
     val maxMessageBytes = Some(ActivationEntityLimit.MAX_ACTIVATION_LIMIT)
     val invokerInstance =
@@ -153,8 +155,12 @@ object Invoker {
     val msgProvider = SpiLoader.get[MessagingProvider]
     if (msgProvider
           .ensureTopic(config, topic = topicName, topicConfig = topicBaseName, maxMessageBytes = maxMessageBytes)
+          .isFailure
+        ||
+        msgProvider
+          .ensureTopic(config, topic= initTopicName, topicConfig = initTopicBaseName, maxMessageBytes = maxMessageBytes)
           .isFailure) {
-      abort(s"failure during msgProvider.ensureTopic for topic $topicName")
+      abort(s"failure during msgProvider.ensureTopic for either topic $topicName or $initTopicName")
     }
 
     val producer = msgProvider.getProducer(config, Some(ActivationEntityLimit.MAX_ACTIVATION_LIMIT))

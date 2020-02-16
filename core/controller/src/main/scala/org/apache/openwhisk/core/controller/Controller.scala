@@ -129,6 +129,8 @@ class Controller(val instance: ControllerInstanceId,
   private val apiV1 = new RestAPIVersion(whiskConfig, "api", "v1")
   private val swagger = new SwaggerDocs(Uri.Path.Empty, "infoswagger.json")
 
+  //// TODO: Probably adjust Invokerhealth for concatenations
+
   /**
    * Handles GET /invokers
    *             /invokers/healthy/count

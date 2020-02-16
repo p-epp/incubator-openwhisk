@@ -611,7 +611,7 @@ trait WhiskWebActionsApi
       if (isRawHttpAction || context
             .overrides(webApiDirectives.reservedProperties ++ action.immutableParameters)) {
         val content = context.toActionArgument(onBehalfOf, isRawHttpAction)
-        invokeAction(actionOwnerIdentity, action, Some(JsObject(content)), maxWaitForWebActionResult, cause = None)
+        invokeAction(actionOwnerIdentity, action, Some(JsObject(content)), Future.successful(None), maxWaitForWebActionResult, cause = None)
       } else {
         Future.failed(RejectRequest(BadRequest, Messages.parametersNotAllowed))
       }

@@ -34,11 +34,14 @@ class UserEventSender(producer: MessageProducer) extends EventSender {
   override def send(msg: => EventMessage): Unit = UserEvents.send(producer, msg)
 }
 
-class MessagingActiveAck(producer: MessageProducer, instance: InvokerInstanceId, eventSender: Option[EventSender])(
+class MessagingActiveAck(producer: MessageProducer, instance: InvokerInstanceId, eventSender: Option[EventSender], initOnly: Boolean = false)(
   implicit logging: Logging,
   ec: ExecutionContext)
     extends ActiveAck {
-  private val source = s"invoker${instance.instance}"
+
+  private val source = if (!initOnly) s"invoker${instance.instance}" else s"invoker_init${instance.instance}"
+  // TODO: source so friemeln, dass das init topic auch geacked wird.
+  //private val initSource = s"invoker_init${instance.instance}"
   override def apply(tid: TransactionId,
                      activationResult: WhiskActivation,
                      blockingInvoke: Boolean,

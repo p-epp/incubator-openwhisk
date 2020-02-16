@@ -347,6 +347,7 @@ object LoggingMarkers {
   private val invoker = "invoker"
   private val database = "database"
   private val activation = "activation"
+  private val initialization = "initialization"
   private val kafka = "kafka"
   private val loadbalancer = "loadbalancer"
   private val containerClient = "containerClient"
@@ -411,6 +412,7 @@ object LoggingMarkers {
   def LOADBALANCER_INVOKER_STATUS_CHANGE(state: String) =
     LogMarkerToken(loadbalancer, "invokerState", counter, Some(state), Map("state" -> state))(MeasurementUnit.none)
   val LOADBALANCER_ACTIVATION_START = LogMarkerToken(loadbalancer, "activations", counter)(MeasurementUnit.none)
+  val LOADBALANCER_INTITIALIZATION_START = LogMarkerToken(loadbalancer, "initializations", counter)(MeasurementUnit.none)
 
   def LOADBALANCER_ACTIVATIONS_INFLIGHT(controllerInstance: ControllerInstanceId) = {
     if (TransactionId.metricsKamonTags)
@@ -472,6 +474,7 @@ object LoggingMarkers {
 
   // Time in invoker
   val INVOKER_ACTIVATION = LogMarkerToken(invoker, activation, start)(MeasurementUnit.none)
+  val INVOKER_INITIALIZATION = LogMarkerToken(invoker, initialization, start)(MeasurementUnit.none)
   def INVOKER_DOCKER_CMD(cmd: String) =
     LogMarkerToken(invoker, "docker", start, Some(cmd), Map("cmd" -> cmd))(MeasurementUnit.time.milliseconds)
   def INVOKER_DOCKER_CMD_TIMEOUT(cmd: String) =

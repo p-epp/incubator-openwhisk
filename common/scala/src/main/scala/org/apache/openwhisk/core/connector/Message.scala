@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 import org.apache.openwhisk.core.entity.ActivationResponse.statusForCode
 
 /** Basic trait for messages that are sent on a message bus connector. */
-trait Message {
+trait Message{
 
   /**
    * A transaction id to attach to the message.
@@ -43,6 +43,13 @@ trait Message {
    */
   override def toString = serialize
 }
+
+/**
+* InitializationMessage - a message to only Initialize a Container (Warming) for possible Performance enhancements
+* It's supposed to be sent to an Invoker before a Sequence is going to be executed. The Invoker will have a specific Feed for that.
+* A Copy of ActivationMessage for now.
+*/
+
 
 case class ActivationMessage(override val transid: TransactionId,
                              action: FullyQualifiedEntityName,

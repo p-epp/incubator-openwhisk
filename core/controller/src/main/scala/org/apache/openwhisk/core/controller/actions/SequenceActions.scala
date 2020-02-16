@@ -23,7 +23,8 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.ActorSystem
 import spray.json._
 import org.apache.openwhisk.common.{Logging, TransactionId, UserEvents}
-import org.apache.openwhisk.core.connector.{EventMessage, MessagingProvider}
+import org.apache.openwhisk.common.tracing.WhiskTracerProvider
+import org.apache.openwhisk.core.connector.{EventMessage, MessagingProvider, ActivationMessage}
 import org.apache.openwhisk.core.controller.WhiskServices
 import org.apache.openwhisk.core.database.{ActivationStore, NoDocumentException, UserContext}
 import org.apache.openwhisk.core.entity._
@@ -69,6 +70,7 @@ protected[actions] trait SequenceActions {
     user: Identity,
     action: WhiskActionMetaData,
     payload: Option[JsObject],
+    activationID: Future[Option[ActivationId]],
     waitForResponse: Option[FiniteDuration],
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[Either[ActivationId, WhiskActivation]]
 
@@ -106,6 +108,15 @@ protected[actions] trait SequenceActions {
       // even though the result of completeSequenceActivation is Right[WhiskActivation],
       // use a more general type for futureSeqResult in case a blocking invoke takes
       // longer than expected and we must return Left[ActivationId] instead
+
+    /**
+    * TODO: Ab hier wäre möglicherweise ein guter Zeitpunkt um die Inits gestartet zu haben
+    *
+    */
+
+
+
+
       completeSequenceActivation(
         seqActivationId,
         // the cause for the component activations is the current sequence
@@ -248,6 +259,10 @@ protected[actions] trait SequenceActions {
    * @param atomicActionCnt the dynamic atomic action count observed so far since the start of the execution of the topmost sequence
    * @return a future which resolves with the accounting for a sequence, including the last result, duration, and activation ids
    */
+
+/** TODO: Continue from Here */
+
+
   private def invokeSequenceComponents(
     user: Identity,
     seqAction: WhiskActionMetaData,
@@ -274,12 +289,21 @@ protected[actions] trait SequenceActions {
       SequenceAccounting(atomicActionCnt, ActivationResponse.payloadPlaceholder(inputPayload))
     }
 
+    //Initialize every Action, when it becomes available
+    val initializedFutureActions = resolvedFutureActions
+      .map { futureAction =>
+        //Create a Tuple of Action and resolved ActivationID
+        (futureAction,invokeInitialization(user, futureAction, cause))
+      }
+
+
+
     // execute the actions in sequential blocking fashion
-    resolvedFutureActions
-      .foldLeft(initialAccounting) { (accountingFuture, futureAction) =>
+    initializedFutureActions
+      .foldLeft(initialAccounting) { (accountingFuture, futureActionTuple) =>
         accountingFuture.flatMap { accounting =>
           if (accounting.atomicActionCnt < actionSequenceLimit) {
-            invokeNextAction(user, futureAction, accounting, cause)
+            invokeNextAction(user, futureActionTuple._1, futureActionTuple._2, accounting, cause) // TODO attach ActivationID
               .flatMap { accounting =>
                 if (!accounting.shortcircuit) {
                   Future.successful(accounting)
@@ -324,8 +348,10 @@ protected[actions] trait SequenceActions {
   private def invokeNextAction(
     user: Identity,
     futureAction: Future[WhiskActionMetaData],
+    initActivationID: Future[Option[ActivationId]],
     accounting: SequenceAccounting,
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[SequenceAccounting] = {
+
     futureAction.flatMap { action =>
       // the previous response becomes input for the next action in the sequence;
       // the accounting no longer needs to hold a reference to it once the action is
@@ -352,7 +378,7 @@ protected[actions] trait SequenceActions {
           // this is an invoke for an atomic action
           logging.debug(this, s"sequence invoking an enclosed atomic action $action")
           val timeout = action.limits.timeout.duration + 1.minute
-          invokeAction(user, action, inputPayload, waitForResponse = Some(timeout), cause) map {
+          invokeAction(user, action, inputPayload, initActivationID, waitForResponse = Some(timeout), cause) map {
             case res => (res, accounting.atomicActionCnt + 1)
           }
       }
@@ -378,6 +404,111 @@ protected[actions] trait SequenceActions {
         }
     }
   }
+
+  /** Try invoking n empty Actions, n being the number of Components given.
+  *   This tries to reduce the number of Coldstarts by forcing the Invoker to initialize
+  *   fitting Containers for the Actions in the Sequence.
+  *
+  *
+  *
+  * TODO:
+  * 1. Create a Initialization Datastructure. Should contain at most every information needed for an initialization only. (For now its a Copy)
+  *   1.1. ExecutableWhiskActionMetaData replacement (optional for now)
+  *   1.2. ActivationMessage done
+  * 2. Create an InitializeMessage and InitializeResponse, Response Containing (maybe) some Indicator for a specific Container.
+  * 3. Write this Function. It Should pass specific invokeOperations to the LB.
+  * 4. (Optional) Maybe adjust LB for a proper Passing to Kafka
+  * 5. Write a new EventMessagehandler and add it to InvokerReactive
+  * 6. (Optional) Maybe adjusting needed for Container/Containerpool/ContainerProxy
+  * 7. Add in Configuration Item and insert Functionality to Code.
+  * 8. Debugging until Operational.
+  */
+
+  private def invokeInitialization(
+    user: Identity,
+    futureAction: Future[WhiskActionMetaData],
+    cause: Option[ActivationId])(implicit transid: TransactionId): Future[Option[ActivationId]] = { // No return Values (not needed) for now...
+
+    // Define it for compatibility, but not needed for initializing
+    val waitForResponse = None
+
+    futureAction.flatMap { action =>
+
+      val futureWhiskActivationTuple = action.toExecutableWhiskAction match {
+        case None =>
+          val SequenceExecMetaData(components) = action.exec
+          logging.debug(this, s"sequence invoking an enclosed sequence $action. Skipping Initialization")
+          // call invokeSequence to invoke the inner sequence; this is a blocking activation by definition
+          Future.successful(None)
+
+        case Some(executable) =>
+          // this is an invoke for an atomic action
+          logging.debug(this, s"sequence invoking an enclosed atomic action $action. Initializing")
+          val timeout = action.limits.timeout.duration + 1.minute
+          // merge package parameters with action (action parameters supersede), then merge in payload
+          // No Payload needed when initializing...
+          val payload: Option[JsObject] = Some(JsObject.empty)
+          val args = action.parameters merge payload
+          // ActivationID wird von tatsächlicher Activation abweichen
+          val activationId = activationIdFactory.make()
+
+          // val startActivation = transid.started(
+          //   this,
+          //   waitForResponse
+          //     .map(_ => LoggingMarkers.CONTROLLER_ACTIVATION_BLOCKING)
+          //     .getOrElse(LoggingMarkers.CONTROLLER_ACTIVATION),
+          //   logLevel = InfoLevel)
+
+          val message = ActivationMessage(
+              transid,
+              FullyQualifiedEntityName(action.namespace, action.name, Some(action.version), action.binding),
+              action.rev,
+              user,
+              activationId, // activation id created here
+              activeAckTopicIndex,
+              false,
+              args,
+              action.parameters.initParameters,
+              cause = cause,
+              WhiskTracerProvider.tracer.getTraceContext(transid))
+          // Just fire and forget, because it is an Initialization
+          val postedFuture = loadBalancer.publish(executable, message, true)
+          Future.successful(Some(message.activationId))
+        }
+        futureWhiskActivationTuple
+        // .map {
+        //   case _ => println("WTF")
+        // }
+
+      }
+    }
+      // futureWhiskActivationTuple
+      //   .map {
+      //     case (Right(activation), atomicActionCountSoFar) =>
+      //       accounting.maybe(activation, atomicActionCountSoFar, actionSequenceLimit)
+      //
+      //     case (Left(activationId), atomicActionCountSoFar) =>
+      //       // the result could not be retrieved in time either from active ack or from db
+      //       logging.error(this, s"component activation timedout for $activationId")
+      //       val activationResponse = ActivationResponse.whiskError(sequenceRetrieveActivationTimeout(activationId))
+      //       accounting.fail(activationResponse, Some(activationId))
+      //
+      //   }
+      //   .recover {
+      //     // check any failure here and generate an activation response to encapsulate
+      //     // the failure mode; consider this failure a whisk error
+      //     case t: Throwable =>
+      //       logging.error(this, s"component activation failed: $t")
+      //       accounting.fail(ActivationResponse.whiskError(sequenceActivationFailure), None)
+      //   }
+
+
+
+
+
+
+
+
 
   /** Replaces default namespaces in a vector of components from a sequence with appropriate namespace. */
   private def resolveDefaultNamespace(components: Vector[FullyQualifiedEntityName],

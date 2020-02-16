@@ -59,12 +59,16 @@ class KafkaProducerConnector(
           producer.send(record, new Callback {
             override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
               if (exception == null) produced.trySuccess(metadata)
-              else produced.tryFailure(exception)
+              else {
+                val res = produced.tryFailure(exception)
+                logging.error(this, s"KafkaProducerConnector.producer.send Promise has a failure because exception ${res} ${exception}")
+              }
             }
           })
         } catch {
           case e: Throwable =>
             produced.tryFailure(e)
+            logging.error(this, s"KafkaProducerConnector.producer.send threw an exception ${e}")
         }
       }
     }

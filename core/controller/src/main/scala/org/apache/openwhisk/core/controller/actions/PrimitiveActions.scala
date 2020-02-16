@@ -40,7 +40,7 @@ import org.apache.openwhisk.core.ConfigKeys
 
 import scala.collection.mutable.Buffer
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise, Await}
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -109,13 +109,14 @@ protected[actions] trait PrimitiveActions {
     user: Identity,
     action: ExecutableWhiskActionMetaData,
     payload: Option[JsObject],
+    initActivationID: Future[Option[ActivationId]],
     waitForResponse: Option[FiniteDuration],
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[Either[ActivationId, WhiskActivation]] = {
 
     if (action.annotations.isTruthy(WhiskActivation.conductorAnnotation)) {
       invokeComposition(user, action, payload, waitForResponse, cause)
     } else {
-      invokeSimpleAction(user, action, payload, waitForResponse, cause)
+      invokeSimpleAction(user, action, payload, initActivationID, waitForResponse, cause)
     }
   }
 
@@ -152,12 +153,21 @@ protected[actions] trait PrimitiveActions {
     user: Identity,
     action: ExecutableWhiskActionMetaData,
     payload: Option[JsObject],
+    initActivationID: Future[Option[ActivationId]],
     waitForResponse: Option[FiniteDuration],
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[Either[ActivationId, WhiskActivation]] = {
 
     // merge package parameters with action (action parameters supersede), then merge in payload
     val args = action.parameters merge payload
-    val activationId = activationIdFactory.make()
+
+    // set activationId correctly depending on passed on activationID (Wait 0 seconds (0 seconds does not work) but get Value)
+
+    val activationId: ActivationId = Await.result(initActivationID, 1 seconds) match {
+      case blub: Option[ActivationId] => blub.getOrElse(activationIdFactory.make())
+      case _ => activationIdFactory.make()
+    }
+
+
 
     val startActivation = transid.started(
       this,
@@ -181,7 +191,7 @@ protected[actions] trait PrimitiveActions {
       cause = cause,
       WhiskTracerProvider.tracer.getTraceContext(transid))
 
-    val postedFuture = loadBalancer.publish(action, message)
+    val postedFuture = loadBalancer.publish(action, message, false)
 
     postedFuture andThen {
       case Success(_) => transid.finished(this, startLoadbalancer)
@@ -334,6 +344,7 @@ protected[actions] trait PrimitiveActions {
           user,
           action = session.action,
           payload = params,
+          initActivationID = Future.successful(None),
           waitForResponse = Some(session.action.limits.timeout.duration + 1.minute), // wait for result
           cause = Some(session.activationId)) // cause is session id
 
@@ -458,6 +469,7 @@ protected[actions] trait PrimitiveActions {
           user,
           action,
           payload,
+          Future.successful(None),
           waitForResponse = Some(action.limits.timeout.duration + 1.minute),
           cause = Some(session.activationId))
       case None => // sequence
