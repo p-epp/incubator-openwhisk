@@ -120,9 +120,9 @@ class MessageFeed(description: String,
 
   private implicit val tid = TransactionId.dispatcher
 
-  logging.info(
+  logging.debug(
     this,
-    s"handler capacity = $maximumHandlerCapacity, pipeline fill at = $pipelineFillThreshold, pipeline depth = $maxPipelineDepth")
+    s"$description handler capacity = $maximumHandlerCapacity, pipeline fill at = $pipelineFillThreshold, pipeline depth = $maxPipelineDepth")
 
   when(Idle) {
     case Event(Ready, _) =>
@@ -184,6 +184,7 @@ class MessageFeed(description: String,
           // state with enough buffering (i.e., maxPipelineDepth > maxPeek), the latency
           // of the commit should be masked.
           val records = consumer.peek(longPollDuration)
+          logging.debug(this, s"FillingPipeline at $description")
           consumer.commit()
           FillCompleted(records.toSeq)
         }
@@ -205,6 +206,7 @@ class MessageFeed(description: String,
   @tailrec
   private def sendOutstandingMessages(): Unit = {
     val occupancy = outstandingMessages.size
+    //logging.info(this, s"Test")
     if (occupancy > 0 && handlerCapacity > 0) {
       // Easiest way with an immutable queue to cleanly dequeue
       // Head is the first elemeent of the queue, desugared w/ an assignment pattern
@@ -212,7 +214,8 @@ class MessageFeed(description: String,
       val (topic, partition, offset, bytes) = outstandingMessages.head
       outstandingMessages = outstandingMessages.tail
 
-      if (logHandoff) logging.debug(this, s"processing $topic[$partition][$offset] ($occupancy/$handlerCapacity)")
+      if (logHandoff) logging.info(this, s"processing $topic[$partition][$offset] ($occupancy/$handlerCapacity)")
+      logging.info(this, s"processing $topic[$partition][$offset] ($occupancy/$handlerCapacity)")
       handler(bytes)
       handlerCapacity -= 1
 
@@ -234,7 +237,7 @@ class MessageFeed(description: String,
   }
 
   private def updateHandlerCapacity(): Int = {
-    logging.debug(self, s"$description received processed msg, current capacity = $handlerCapacity")
+    logging.info(self, s"$description received processed msg, current capacity = $handlerCapacity")
 
     if (handlerCapacity < maximumHandlerCapacity) {
       handlerCapacity += 1

@@ -68,6 +68,8 @@ sealed abstract class ContainerData(val lastUsed: Instant, val memoryLimit: Byte
   /** When ContainerProxy in this state is scheduled, it may result in a new state (ContainerData)*/
   def nextRun(r: Run): ContainerData
 
+  def nextRun(i: Initialize):ContainerData
+
   /**
    *  Return Some(container) (for ContainerStarted instances) or None(for ContainerNotStarted instances)
    *  Useful for cases where all ContainerData instances are handled, vs cases where only ContainerStarted
@@ -119,6 +121,8 @@ case class NoData(override val activeActivationCount: Int = 0)
     extends ContainerNotStarted(Instant.EPOCH, 0.B, activeActivationCount)
     with ContainerNotInUse {
   override def nextRun(r: Run) = WarmingColdData(r.msg.user.namespace.name, r.action, Instant.now, 1)
+  override def nextRun(i: Initialize) = WarmingColdData(i.msg.user.namespace.name, i.action, Instant.now, 1)
+
 }
 
 /** type representing a cold (not running) container with specific memory allocation */
@@ -126,6 +130,8 @@ case class MemoryData(override val memoryLimit: ByteSize, override val activeAct
     extends ContainerNotStarted(Instant.EPOCH, memoryLimit, activeActivationCount)
     with ContainerNotInUse {
   override def nextRun(r: Run) = WarmingColdData(r.msg.user.namespace.name, r.action, Instant.now, 1)
+  override def nextRun(i: Initialize) = WarmingColdData(i.msg.user.namespace.name, i.action, Instant.now, 1)
+
 }
 
 /** type representing a prewarmed (running, but unused) container (with a specific memory allocation) */
@@ -138,6 +144,8 @@ case class PreWarmedData(override val container: Container,
   override val initingState = "prewarmed"
   override def nextRun(r: Run) =
     WarmingData(container, r.msg.user.namespace.name, r.action, Instant.now, 1)
+  override def nextRun(i: Initialize) = WarmingData(container, i.msg.user.namespace.name, i.action, Instant.now, 1)
+
 }
 
 /** type representing a prewarm (running, but not used) container that is being initialized (for a specific action + invocation namespace) */
@@ -150,6 +158,8 @@ case class WarmingData(override val container: Container,
     with ContainerInUse {
   override val initingState = "warming"
   override def nextRun(r: Run) = copy(lastUsed = Instant.now, activeActivationCount = activeActivationCount + 1)
+  override def nextRun(i: Initialize) = copy(lastUsed = Instant.now, activeActivationCount = activeActivationCount + 1)
+
 }
 
 /** type representing a cold (not yet running) container that is being initialized (for a specific action + invocation namespace) */
@@ -161,6 +171,8 @@ case class WarmingColdData(invocationNamespace: EntityName,
     with ContainerInUse {
   override val initingState = "warmingCold"
   override def nextRun(r: Run) = copy(lastUsed = Instant.now, activeActivationCount = activeActivationCount + 1)
+  override def nextRun(i: Initialize) = copy(lastUsed = Instant.now, activeActivationCount = activeActivationCount + 1)
+
 }
 
 /** type representing a warm container that has already been in use (for a specific action + invocation namespace) */
@@ -173,10 +185,13 @@ case class WarmedData(override val container: Container,
     with ContainerInUse {
   override val initingState = "warmed"
   override def nextRun(r: Run) = copy(lastUsed = Instant.now, activeActivationCount = activeActivationCount + 1)
+  override def nextRun(i: Initialize) = copy(lastUsed = Instant.now, activeActivationCount = activeActivationCount + 1)
+
 }
 
 // Events received by the actor
 case class Start(exec: CodeExec[_], memoryLimit: ByteSize)
+case class Job(job: String, action: ExecutableWhiskAction, msg: ActivationMessage, retryLogDeadline: Option[Deadline] = None)
 case class Run(action: ExecutableWhiskAction, msg: ActivationMessage, retryLogDeadline: Option[Deadline] = None)
 case class Initialize(action: ExecutableWhiskAction, msg: ActivationMessage, retryLogDeadline: Option[Deadline] = None)
 case object Remove
@@ -245,7 +260,7 @@ class ContainerProxy(factory: (TransactionId,
   implicit val ec = context.system.dispatcher
   implicit val logging = new AkkaLogging(context.system.log)
   var rescheduleJob = false // true iff actor receives a job but cannot process it because actor will destroy itself
-  var runBuffer = immutable.Queue.empty[Run] //does not retain order, but does manage jobs that would have pushed past action concurrency limit
+  var runBuffer = immutable.Queue.empty[Job] //does not retain order, but does manage jobs that would have pushed past action concurrency limit
   //track buffer processing state to avoid extra transitions near end of buffer - this provides a pseudo-state between Running and Ready
   var bufferProcessing = false
 
@@ -404,6 +419,8 @@ class ContainerProxy(factory: (TransactionId,
       activeCount += 1
       initializeIt(data.container, job)
         .map(_=> InitCompleted)
+      logging.info(this,s"Initialized on preWarmed Container ${data.container}")
+
       goto(Running) using PreWarmedData(data.container, data.kind, data.memoryLimit, 1)
 
     case Event(Remove, data: PreWarmedData) => destroyContainer(data.container)
@@ -418,17 +435,17 @@ class ContainerProxy(factory: (TransactionId,
     case Event(job: Run, data: PreWarmedData) =>
       implicit val transid = job.msg.transid
       logging.info(this, s"buffering for warming container ${data.container}; ${activeCount} activations in flight")
-      runBuffer = runBuffer.enqueue(job)
+      runBuffer = runBuffer.enqueue(Job("Run",job.action, job.msg, job.retryLogDeadline))
       stay()
 
     // Run during cold init (for concurrent > 1)
     case Event(job: Run, _: NoData) =>
       implicit val transid = job.msg.transid
       logging.info(this, s"buffering for cold warming container ${activeCount} activations in flight")
-      runBuffer = runBuffer.enqueue(job)
+      runBuffer = runBuffer.enqueue(Job("Run",job.action, job.msg, job.retryLogDeadline))
       stay()
 
-    // Init was successful
+      // Init was successful
     case Event(completed: InitCompleted, _: PreWarmedData) =>
       processBuffer(completed.data.action, completed.data)
       stay using completed.data
@@ -438,6 +455,16 @@ class ContainerProxy(factory: (TransactionId,
       //in case concurrency supported, multiple runs can begin as soon as init is complete
       context.parent ! NeedWork(data)
       stay using data
+
+
+    // Init was successful
+    case Event(InitCompleted, data : WarmedData) =>
+      activeCount -= 1
+      if (requestWork(data) || activeCount > 0) {
+        stay using data
+      } else {
+        goto(Ready) using data
+      }
 
     // Run was successful
     case Event(RunCompleted, data: WarmedData) =>
@@ -453,7 +480,7 @@ class ContainerProxy(factory: (TransactionId,
         if activeCount >= data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if we are over concurrency limit, and not a failure on resume
       implicit val transid = job.msg.transid
       logging.warn(this, s"buffering for maxed warm container ${data.container}; ${activeCount} activations in flight")
-      runBuffer = runBuffer.enqueue(job)
+      runBuffer = runBuffer.enqueue(Job("Run",job.action, job.msg, job.retryLogDeadline))
       stay()
     case Event(job: Run, data: WarmedData)
         if activeCount < data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if there was a delay, and not a failure on resume, skip the run
@@ -465,9 +492,24 @@ class ContainerProxy(factory: (TransactionId,
         .pipeTo(self)
       stay() using data
 
-    case Event(job: Initialize, data: WarmedData) =>
-      logging.info(this, s"Trying to Initialize Warm Container ${data.container}. Dropping Request.")
-      stay() using data
+
+      case Event(job: Initialize, data: WarmedData)
+          if activeCount >= data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if we are over concurrency limit, and not a failure on resume
+        implicit val transid = job.msg.transid
+        //logging.info(this, s"Trying to Initialize Warm Container ${data.container}. Dropping Request.")
+        logging.warn(this, s"buffering for maxed warm container ${data.container}; ${activeCount} activations in flight")
+        runBuffer = runBuffer.enqueue(Job("Initialize",job.action, job.msg, job.retryLogDeadline))
+        stay()
+      case Event(job: Initialize, data: WarmedData)
+          if activeCount < data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if there was a delay, and not a failure on resume, skip the run
+        activeCount += 1
+        implicit val transid = job.msg.transid
+        bufferProcessing = false //reset buffer processing state
+        initializeIt(data.container, job)
+          .map(_ => InitCompleted)
+          .pipeTo(self)
+        stay() using data
+
 
     // Failed after /init (the first run failed)
     case Event(_: FailureMessage, data: PreWarmedData) =>
@@ -501,8 +543,14 @@ class ContainerProxy(factory: (TransactionId,
       goto(Running) using data
 
     case Event(job: Initialize, data: WarmedData) =>
-      logging.info(this, s"Trying to Initialize Warm Container ${data.container}. Dropping Request.")
-      stay() using data
+      implicit val transid = job.msg.transid
+      activeCount += 1
+
+      initializeIt(data.container, job)
+      .map(_ => InitCompleted)
+      .pipeTo(self)
+
+      goto(Running) using data
 
     // pause grace timed out
     case Event(StateTimeout, data: WarmedData) =>
@@ -538,6 +586,25 @@ class ContainerProxy(factory: (TransactionId,
         .pipeTo(self)
 
       goto(Running) using data
+
+    case Event(job: Initialize, data: WarmedData) =>
+      implicit val transid = job.msg.transid
+      activeCount += 1
+      data.container
+        .resume()
+        .andThen {
+          // Sending the message to self on a failure will cause the message
+          // to ultimately be sent back to the parent (which will retry it)
+          // when container removal is done.
+          case Failure(_) =>
+            rescheduleJob = true
+            self ! job
+        }
+        .flatMap(_ => initializeIt(data.container, job))
+        .map(_ => InitCompleted)
+        .pipeTo(self)
+
+        goto(Running) using data
 
     // container is reclaimed by the pool or it has become too old
     case Event(StateTimeout | Remove, data: WarmedData) =>
@@ -649,7 +716,7 @@ class ContainerProxy(factory: (TransactionId,
     if (runBuffer.nonEmpty) {
       logging.info(this, s"resending ${runBuffer.size} buffered jobs to parent on container removal")
       runBuffer.foreach(context.parent ! _)
-      runBuffer = immutable.Queue.empty[Run]
+      runBuffer = immutable.Queue.empty[Job]
     }
   }
 

@@ -165,7 +165,7 @@ class InvokerReactive(
 
   /** Initialize message consumers */
   private val topic = s"invoker${instance.toInt}"
-  private val initTopic = s"invoker${instance.toInt}_init"
+  private val initTopic = s"invoker_init${instance.toInt}"
   private val maximumContainers = (poolConfig.userMemory / MemoryLimit.MIN_MEMORY).toInt
   private val msgProvider = SpiLoader.get[MessagingProvider]
 
@@ -222,9 +222,11 @@ class InvokerReactive(
   }
 
   private val pool =
-    actorSystem.actorOf(ContainerPool.props(childFactory, poolConfig, activationFeed, prewarmingConfigs))
-  private val initpool =
-    actorSystem.actorOf(ContainerPool.props(childFactory, poolConfig, initializationFeed, prewarmingConfigs))
+    actorSystem.actorOf(ContainerPool.props(childFactory, poolConfig, activationFeed, initializationFeed, prewarmingConfigs))
+  // private val initpool = {
+  //   logging.info(this, s"initializing initpool")
+  //   actorSystem.actorOf(ContainerPool.props(childFactory, poolConfig, initializationFeed, prewarmingConfigs))
+  // }
 
   /** Is called when an ActivationMessage is read from Kafka */
   def processActivationMessage(bytes: Array[Byte]): Future[Unit] = {
@@ -258,7 +260,7 @@ class InvokerReactive(
             .flatMap { action =>
               action.toExecutableWhiskAction match {
                 case Some(executable) =>
-                  pool ! Run(executable, msg)
+                  pool ! Job("Run", executable, msg)
                   Future.successful(())
                 case None =>
                   logging.error(this, s"non-executable action reached the invoker ${action.fullyQualifiedName(false)}")
@@ -322,10 +324,12 @@ class InvokerReactive(
       }
   }
   def processInitializationMessage(bytes: Array[Byte]): Future[Unit] = {
+    logging.info(this, s"entering processInitializationMessage")
     Future(ActivationMessage.parse(new String(bytes, StandardCharsets.UTF_8)))
       .flatMap(Future.fromTry)
       .flatMap { msg =>
         implicit val transid: TransactionId = msg.transid
+
 
         //set trace context to continue tracing
         WhiskTracerProvider.tracer.setTraceContext(transid, msg.traceContext)
@@ -349,7 +353,7 @@ class InvokerReactive(
             .flatMap { action =>
               action.toExecutableWhiskAction match {
                 case Some(executable) =>
-                  initpool ! Initialize(executable, msg)
+                  pool ! Job("Initialize", executable, msg)
                   Future.successful(())
                 case None =>
                   logging.error(this, s"non-initializable action reached the invoker ${action.fullyQualifiedName(false)}")

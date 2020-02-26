@@ -158,11 +158,12 @@ class KafkaConsumerConnector(
     val consumer = tryAndThrow(s"creating consumer for $topic") {
       new KafkaConsumer(config, new ByteArrayDeserializer, new ByteArrayDeserializer)
     }
-
+    logging.info(this, s"subscribing to $topic")
     // subscribe does not need to be synchronized, because the reference to the consumer hasn't been returned yet and
     // thus this is guaranteed only to be called by the calling thread.
     tryAndThrow(s"subscribing to $topic")(consumer.subscribe(Seq(topic).asJavaCollection))
-
+    // What happens from now on
+    logging.info(this, s"subscribed to $topic")
     consumer
   }
 
@@ -201,6 +202,7 @@ class KafkaConsumerConnector(
       }
     }.andThen {
       case Failure(_: WakeupException) =>
+        logging.info(this, s"WakeUpException for consumer of topic '$topic'")
         recreateConsumer()
       case Failure(e) =>
         // Only log level info because failed metric reporting is not critical

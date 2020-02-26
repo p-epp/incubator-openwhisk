@@ -282,8 +282,9 @@ class ShardingContainerPoolBalancer(
           this,
           start,
           s"posted to ${status.topic()}[${status.partition()}][${status.offset()}]",
+          logLevel = InfoLevel
           )
-      case Failure(_) => transid.failed(this, start, s"error on posting to topic $topic")
+      case Failure(_) => transid.failed(this, start, s"error on posting to topic $topic", logLevel = InfoLevel)
     }
   }
 

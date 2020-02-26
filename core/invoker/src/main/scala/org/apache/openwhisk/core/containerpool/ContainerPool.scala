@@ -52,12 +52,14 @@ case object EmitMetrics
  * (kind, memory) and there is space in the pool.
  *
  * @param childFactory method to create new container proxy actor
- * @param feed actor to request more work from
+ * @param actfeed Activation Actor to request Work from
+ * @param initfeed Initialization Actor to request Work from
  * @param prewarmConfig optional settings for container prewarming
  * @param poolConfig config for the ContainerPool
  */
 class ContainerPool(childFactory: ActorRefFactory => ActorRef,
-                    feed: ActorRef,
+                    actfeed: ActorRef,
+                    initfeed: ActorRef,
                     prewarmConfig: List[PrewarmingConfig] = List.empty,
                     poolConfig: ContainerPoolConfig)
     extends Actor {
@@ -66,19 +68,16 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
   implicit val logging = new AkkaLogging(context.system.log)
   implicit val ec = context.dispatcher
 
+
+
   var freePool = immutable.Map.empty[ActorRef, ContainerData]
   var busyPool = immutable.Map.empty[ActorRef, ContainerData]
   var prewarmedPool = immutable.Map.empty[ActorRef, ContainerData]
   // If all memory slots are occupied and if there is currently no container to be removed, than the actions will be
   // buffered here to keep order of computation.
   // Otherwise actions with small memory-limits could block actions with large memory limits.
-  var runBuffer = immutable.Queue.empty[Run]
-<<<<<<< HEAD
-  var initBuffer = immutable.Queue.empty[Initialize]
-=======
-  // Track the resent buffer head - so that we don't resend buffer head multiple times
-  var resent: Option[Run] = None
->>>>>>> 84e53daa3b9e7ecb65b106ef432f4ead8f2cb9f2
+  var runBuffer = immutable.Queue.empty[Job]
+  //var initBuffer = immutable.Queue.empty[Initialize]
   val logMessageInterval = 10.seconds
   //periodically emit metrics (don't need to do this for each message!)
   context.system.scheduler.schedule(30.seconds, 10.seconds, self, EmitMetrics)
@@ -90,6 +89,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
       prewarmContainer(config.exec, config.memoryLimit)
     }
   }
+
 
   def logContainerStart(r: Run, containerState: String, activeActivations: Int, container: Option[Container]): Unit = {
     val namespaceName = r.msg.user.namespace.name
@@ -110,18 +110,26 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
     // Run messages are received either via the feed or from child containers which cannot process
     // their requests and send them back to the pool for rescheduling (this may happen if "docker" operations
     // fail for example, or a container has aged and was destroying itself when a new request was assigned)
+
+
+    // Wrapper for either Run or Initialize calls. Needed for using the runBuffer
+    case j: Job =>
+      if (j.job == "Run") {
+        self ! Run(j.action, j.msg, j.retryLogDeadline)
+      }
+      else if (j.job == "Initialize")
+        self ! Initialize(j.action, j.msg, j.retryLogDeadline)
+      else
+        logging.error(this, s"The Job has been called wrong.")
+
     case r: Run =>
       // Check if the message is resent from the buffer. Only the first message on the buffer can be resent.
       val isResentFromBuffer = runBuffer.nonEmpty && runBuffer.dequeueOption.exists(_._1.msg == r.msg)
 
       // Only process request, if there are no other requests waiting for free slots, or if the current request is the
       // next request to process
-      // It is guaranteed, that only the first message on the buffer is resent.
+      // It is guaranteed, that only the first message on the buffer is present.
       if (runBuffer.isEmpty || isResentFromBuffer) {
-        if (isResentFromBuffer) {
-          //remove from resent tracking - it may get resent again, or get processed
-          resent = None
-        }
         val createdContainer =
           // Is there enough space on the invoker for this action to be executed.
           if (hasPoolSpaceFor(busyPool, r.action.limits.memory.megabytes.MB)) {
@@ -179,13 +187,12 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
               //update freePool to track counts
               freePool = freePool + (actor -> newData)
             }
-            // Remove the action that was just executed from the buffer and execute the next one in the queue.
+            // Remove the action that get's executed now from the buffer and execute the next one afterwards.
             if (isResentFromBuffer) {
               // It is guaranteed that the currently executed messages is the head of the queue, if the message comes
               // from the buffer
               val (_, newBuffer) = runBuffer.dequeue
               runBuffer = newBuffer
-              // Try to process the next item in buffer (or get another message from feed, if buffer is now empty)
               processBufferOrFeed()
             }
             actor ! r // forwards the run request to the container
@@ -196,7 +203,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
             // (and a new container would over commit the pool)
             val isErrorLogged = r.retryLogDeadline.map(_.isOverdue).getOrElse(true)
             val retryLogDeadline = if (isErrorLogged) {
-              logging.warn(
+              logging.error(
                 this,
                 s"Rescheduling Run message, too many message in the pool, " +
                   s"freePoolSize: ${freePool.size} containers and ${memoryConsumptionOf(freePool)} MB, " +
@@ -212,26 +219,28 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
             }
             if (!isResentFromBuffer) {
               // Add this request to the buffer, as it is not there yet.
-              runBuffer = runBuffer.enqueue(Run(r.action, r.msg, retryLogDeadline))
+              runBuffer = runBuffer.enqueue(Job("Run",r.action, r.msg, retryLogDeadline))
             }
-          //buffered items will be processed via processBufferOrFeed()
+            // As this request is the first one in the buffer, try again to execute it.
+            self ! Run(r.action, r.msg, retryLogDeadline)
         }
       } else {
         // There are currently actions waiting to be executed before this action gets executed.
         // These waiting actions were not able to free up enough memory.
-        runBuffer = runBuffer.enqueue(r)
+        runBuffer = runBuffer.enqueue(Job("Run",r.action, r.msg, r.retryLogDeadline))
       }
 
     // If it is only an InitializationMessage, initialize.
 
     case i: Initialize =>
       // Check if the message is resent from the buffer. Only the first message on the buffer can be resent.
-      val isResentFromBuffer = initBuffer.nonEmpty && initBuffer.dequeueOption.exists(_._1.msg == i.msg)
+      logging.info(this, "Initialize has been triggered.")
+      val isResentFromBuffer = runBuffer.nonEmpty && runBuffer.dequeueOption.exists(_._1.msg == i.msg)
 
       // Only process request, if there are no other requests waiting for free slots, or if the current request is the
       // next request to process
       // It is guaranteed, that only the first message on the buffer is resent.
-      if (initBuffer.isEmpty || isResentFromBuffer) {
+      if (runBuffer.isEmpty || isResentFromBuffer) {
         val createdContainer =
           // Is there enough space on the invoker for this action to be executed.
           if (hasPoolSpaceFor(busyPool, i.action.limits.memory.megabytes.MB)) {
@@ -269,7 +278,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
         createdContainer match {
           case Some(((actor, data), containerState)) =>
             //increment active count before storing in pool map
-            val newData = data.nextRun(Run(i.action, i.msg, i.retryLogDeadline))
+            val newData = data.nextRun(Initialize(i.action, i.msg, i.retryLogDeadline))
             val container = newData.getContainer
 
             if (newData.activeActivationCount < 1) {
@@ -293,9 +302,9 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
             if (isResentFromBuffer) {
               // It is guaranteed that the currently executed messages is the head of the queue, if the message comes
               // from the buffer
-              val (_, newBuffer) = initBuffer.dequeue
-              initBuffer = newBuffer
-              initBuffer.dequeueOption.foreach { case (init, _) => self ! init }
+              val (_, newBuffer) = runBuffer.dequeue
+              runBuffer = newBuffer
+              runBuffer.dequeueOption.foreach { case (init, _) => self ! init }
             }
             actor ! i // forwards the init request to the container
             //logContainerStart(i, containerState, newData.activeActivationCount, container)
@@ -321,7 +330,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
             }
             if (!isResentFromBuffer) {
               // Add this request to the buffer, as it is not there yet.
-              initBuffer = initBuffer.enqueue(i)
+              runBuffer = runBuffer.enqueue(Job("Initialize", i.action, i.msg, retryLogDeadline))
             }
             // As this request is the first one in the buffer, try again to execute it.
             self ! Initialize(i.action, i.msg, retryLogDeadline)
@@ -329,13 +338,15 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
       } else {
         // There are currently actions waiting to be executed before this action gets executed.
         // These waiting actions were not able to free up enough memory.
-        initBuffer = initBuffer.enqueue(i)
+        runBuffer = runBuffer.enqueue(Job("Initialize", i.action, i.msg, retryLogDeadline))
       }
 
 
 
     // Container is free to take more work
     case NeedWork(warmData: WarmedData) =>
+      actfeed ! MessageFeed.Processed
+      initfeed ! MessageFeed.Processed
       val oldData = freePool.get(sender()).getOrElse(busyPool(sender()))
       val newData =
         warmData.copy(lastUsed = oldData.lastUsed, activeActivationCount = oldData.activeActivationCount - 1)
@@ -357,7 +368,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
         busyPool = busyPool + (sender() -> newData)
         freePool = freePool - sender()
       }
-      processBufferOrFeed()
+
     // Container is prewarmed and ready to take work
     case NeedWork(data: PreWarmedData) =>
       prewarmedPool = prewarmedPool + (sender() -> data)
@@ -368,12 +379,18 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
       // so there is capacity to accept another job request
       freePool.get(sender()).foreach { f =>
         freePool = freePool - sender()
+        if (f.activeActivationCount > 0) {
+          actfeed ! MessageFeed.Processed
+          initfeed ! MessageFeed.Processed
+        }
       }
       // container was busy (busy indicates at full capacity), so there is capacity to accept another job request
       busyPool.get(sender()).foreach { _ =>
         busyPool = busyPool - sender()
+        actfeed ! MessageFeed.Processed
+        initfeed ! MessageFeed.Processed
       }
-      processBufferOrFeed()
+
     // This message is received for one of these reasons:
     // 1. Container errored while resuming a warm container, could not process the job, and sent the job back
     // 2. The container aged, is destroying itself, and was assigned a job which it had to send back
@@ -384,25 +401,6 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
       busyPool = busyPool - sender()
     case EmitMetrics =>
       emitMetrics()
-  }
-
-  /** Resend next item in the buffer, or trigger next item in the feed, if no items in the buffer. */
-  def processBufferOrFeed() = {
-    // If buffer has more items, and head has not already been resent, send next one, otherwise get next from feed.
-    runBuffer.dequeueOption match {
-      case Some((run, _)) => //run the first from buffer
-        implicit val tid = run.msg.transid
-        //avoid sending dupes
-        if (resent.isEmpty) {
-          logging.info(this, s"re-processing from buffer (${runBuffer.length} items in buffer)")
-          resent = Some(run)
-          self ! run
-        } else {
-          //do not resend the buffer head multiple times (may reach this point from multiple messages, before the buffer head is re-processed)
-        }
-      case None => //feed me!
-        feed ! MessageFeed.Processed
-    }
   }
 
   /** Creates a new container and updates state accordingly. */
@@ -574,9 +572,10 @@ object ContainerPool {
 
   def props(factory: ActorRefFactory => ActorRef,
             poolConfig: ContainerPoolConfig,
-            feed: ActorRef,
+            actfeed: ActorRef,
+            initfeed: ActorRef,
             prewarmConfig: List[PrewarmingConfig] = List.empty) =
-    Props(new ContainerPool(factory, feed, prewarmConfig, poolConfig))
+    Props(new ContainerPool(factory, actfeed, initfeed, prewarmConfig, poolConfig))
 }
 
 /** Contains settings needed to perform container prewarming. */
