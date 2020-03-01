@@ -1,6 +1,6 @@
 #FileLock
-#Thu Feb 27 00:06:28 CET 2020
-hostName=xin858078.fritz.box
-id=17083c0646dcf633c83c879d2db64651520ef1e7b55
+#Sat Feb 29 20:44:10 CET 2020
+hostName=10.208.49.125
+id=170927a40804f5e23cd6c85cb3b574ffdf94e3effce
 method=file
-server=192.168.178.9\:50018
+server=10.208.49.125\:51881

@@ -78,6 +78,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
   // buffered here to keep order of computation.
   // Otherwise actions with small memory-limits could block actions with large memory limits.
   var runBuffer = immutable.Queue.empty[Job]
+  var resent: Option[Job] = None
   //var initBuffer = immutable.Queue.empty[Initialize]
   val logMessageInterval = 10.seconds
   //periodically emit metrics (don't need to do this for each message!)
@@ -114,10 +115,13 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
     // Wrapper for either Run or Initialize calls. Needed for using the runBuffer
     case j: Job =>
       if (j.job == "Run") {
+        logging.info(this, s"Run job will be triggered for ${j.action}")
         self ! Run(j.action, j.msg, j.retryLogDeadline)
       }
-      else if (j.job == "Initialize")
+      else if (j.job == "Initialize") {
+        logging.info(this, s"Initialize job will be triggered for ${j.action}")
         self ! Initialize(j.action, j.msg, j.retryLogDeadline)
+      }
       else
         logging.error(this, s"The Job has been called wrong.")
 
@@ -182,6 +186,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
               }
               busyPool = busyPool + (actor -> newData)
               freePool = freePool - actor
+              logging.info(this, s"${freePool.count(z => true)} free containers available")
             } else {
               //update freePool to track counts
               freePool = freePool + (actor -> newData)
@@ -293,6 +298,8 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
               }
               busyPool = busyPool + (actor -> newData)
               freePool = freePool - actor
+
+              logging.info(this, s"${freePool.count(z => true)} free containers available")
             } else {
               //update freePool to track counts
               freePool = freePool + (actor -> newData)
@@ -303,7 +310,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
               // from the buffer
               val (_, newBuffer) = runBuffer.dequeue
               runBuffer = newBuffer
-              runBuffer.dequeueOption.foreach { case (init, _) => self ! init }
+              processBufferOrFeed()
             }
             actor ! i // forwards the init request to the container
             //logContainerStart(i, containerState, newData.activeActivationCount, container)
@@ -337,7 +344,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
       } else {
         // There are currently actions waiting to be executed before this action gets executed.
         // These waiting actions were not able to free up enough memory.
-        runBuffer = runBuffer.enqueue(Job("Initialize", i.action, i.msg, retryLogDeadline))
+        runBuffer = runBuffer.enqueue(Job("Initialize", i.action, i.msg, i.retryLogDeadline))
       }
 
 
@@ -433,7 +440,8 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
           //do not resend the buffer head multiple times (may reach this point from multiple messages, before the buffer head is re-processed)
         }
       case None => //feed me!
-        feed ! MessageFeed.Processed
+        actfeed ! MessageFeed.Processed
+        initfeed ! MessageFeed.Processed
     }
   }
 

@@ -80,7 +80,7 @@ sealed abstract class ContainerData(val lastUsed: Instant, val memoryLimit: Byte
   /** When ContainerProxy in this state is scheduled, it may result in a new state (ContainerData)*/
   def nextRun(r: Run): ContainerData
 
-  def nextRun(i: Initialize):ContainerData
+  def nextRun(i: Initialize): ContainerData
 
   /**
    *  Return Some(container) (for ContainerStarted instances) or None(for ContainerNotStarted instances)
@@ -193,7 +193,7 @@ case class WarmedData(override val container: Container,
                       action: ExecutableWhiskAction,
                       override val lastUsed: Instant,
                       override val activeActivationCount: Int = 0,
-                      resumeRun: Option[Run] = None)
+                      resumeRun: Option[Job] = None)
     extends ContainerStarted(container, lastUsed, action.limits.memory.megabytes.MB, activeActivationCount)
     with ContainerInUse {
   override val initingState = "warmed"
@@ -202,7 +202,8 @@ case class WarmedData(override val container: Container,
 
   //track the resuming run for easily referring to the action being resumed (it may fail and be resent)
   def withoutResumeRun() = this.copy(resumeRun = None)
-  def withResumeRun(job: Run) = this.copy(resumeRun = Some(job))
+  def withResumeRun(job: Job) = this.copy(resumeRun = Some(job))
+  //def withResumeRun(job: Initialize) = this.copy(resumeRun = Some(job))
 }
 
 // Events received by the actor
@@ -309,6 +310,7 @@ class ContainerProxy(factory: (TransactionId,
 
     // cold start (no container to reuse or available stem cell container)
     case Event(job: Run, _) =>
+      logging.info(this, "Running Container from Cold Start")
       implicit val transid = job.msg.transid
       activeCount += 1
       // create a new container
@@ -345,7 +347,7 @@ class ContainerProxy(factory: (TransactionId,
             // also update the feed and active ack; the container cleanup is queued
             // implicitly via a FailureMessage which will be processed later when the state
             // transitions to Running
-            val activation = ContainerProxy.constructWhiskActivation(job, None, Interval.zero, false, response)
+            val activation = ContainerProxy.constructWhiskActivation(Job("Run", job.action, job.msg, job.retryLogDeadline), None, Interval.zero, false, response)
             sendActiveAck(
               transid,
               activation,
@@ -366,6 +368,7 @@ class ContainerProxy(factory: (TransactionId,
 
     case Event(job: Initialize, _) =>
       implicit val transid = job.msg.transid
+      logging.info(this, s"Initializing Container on Cold Start Container.")
       activeCount += 1
       // create a new container
       val container = factory(
@@ -410,6 +413,7 @@ class ContainerProxy(factory: (TransactionId,
           //initializeAndRun(container, job)
           initializeIt(container, job)
         }
+        .pipeTo(self)
 
         goto(Running)
   }
@@ -442,6 +446,7 @@ class ContainerProxy(factory: (TransactionId,
       activeCount += 1
       initializeIt(data.container, job)
         .map(_=> InitCompleted)
+        .pipeTo(self)
       logging.info(this,s"Initialized on preWarmed Container ${data.container}")
 
       goto(Running) using PreWarmedData(data.container, data.kind, data.memoryLimit, 1)
@@ -472,6 +477,20 @@ class ContainerProxy(factory: (TransactionId,
       logging.info(this, s"buffering for cold warming container ${activeCount} activations in flight")
       runBuffer = runBuffer.enqueue(Job("Run",job.action, job.msg, job.retryLogDeadline))
       stay()
+
+      // Run during prewarm init (for concurrent > 1)
+      case Event(job: Initialize, data: PreWarmedData) =>
+        implicit val transid = job.msg.transid
+        logging.info(this, s"buffering Init for warming container ${data.container}; ${activeCount} activations in flight")
+        runBuffer = runBuffer.enqueue(Job("Initialize",job.action, job.msg, job.retryLogDeadline))
+        stay()
+
+      // Run during cold init (for concurrent > 1)
+      case Event(job: Initialize, _: NoData) =>
+        implicit val transid = job.msg.transid
+        logging.info(this, s"buffering Init for cold warming container ${activeCount} activations in flight")
+        runBuffer = runBuffer.enqueue(Job("Initialize",job.action, job.msg, job.retryLogDeadline))
+        stay()
 
       // Init was successful
     case Event(completed: InitCompleted, _: PreWarmedData) =>
@@ -525,7 +544,7 @@ class ContainerProxy(factory: (TransactionId,
           if activeCount >= data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if we are over concurrency limit, and not a failure on resume
         implicit val transid = job.msg.transid
         //logging.info(this, s"Trying to Initialize Warm Container ${data.container}. Dropping Request.")
-        logging.warn(this, s"buffering for maxed warm container ${data.container}; ${activeCount} activations in flight")
+        logging.warn(this, s"buffering Init for maxed warm container ${data.container}; ${activeCount} activations in flight")
         runBuffer = runBuffer.enqueue(Job("Initialize",job.action, job.msg, job.retryLogDeadline))
         stay()
       case Event(job: Initialize, data: WarmedData)
@@ -578,7 +597,7 @@ class ContainerProxy(factory: (TransactionId,
     case Event(job: Run, data: WarmedData) =>
       implicit val transid = job.msg.transid
       activeCount += 1
-      val newData = data.withResumeRun(job)
+      val newData = data.withResumeRun(Job("Run", job.action, job.msg, job.retryLogDeadline))
       initializeAndRun(data.container, job, true)
         .map(_ => RunCompleted)
         .pipeTo(self)
@@ -617,7 +636,7 @@ class ContainerProxy(factory: (TransactionId,
     case Event(job: Run, data: WarmedData) =>
       implicit val transid = job.msg.transid
       activeCount += 1
-      val newData = data.withResumeRun(job)
+      val newData = data.withResumeRun(Job("Run", job.action, job.msg, job.retryLogDeadline))
       data.container
         .resume()
         .andThen {
@@ -636,6 +655,8 @@ class ContainerProxy(factory: (TransactionId,
     case Event(job: Initialize, data: WarmedData) =>
       implicit val transid = job.msg.transid
       activeCount += 1
+      val newData = data.withResumeRun(Job("Initialize", job.action, job.msg, job.retryLogDeadline))
+
       data.container
         .resume()
         .andThen {
@@ -872,7 +893,7 @@ class ContainerProxy(factory: (TransactionId,
                 .map(i => Interval(runInterval.start.minusMillis(i.duration.toMillis), runInterval.end))
                 .getOrElse(runInterval)
               ContainerProxy.constructWhiskActivation(
-                job,
+                Job("Run", job.action, job.msg, job.retryLogDeadline),
                 initInterval,
                 initRunInterval,
                 runInterval.duration >= actionTimeout,
@@ -885,13 +906,13 @@ class ContainerProxy(factory: (TransactionId,
         case InitializationError(interval, response) =>
           Future.successful(
             ContainerProxy
-              .constructWhiskActivation(job, Some(interval), interval, interval.duration >= actionTimeout, response))
+              .constructWhiskActivation(Job("Run", job.action, job.msg, job.retryLogDeadline), Some(interval), interval, interval.duration >= actionTimeout, response))
         case t =>
           // Actually, this should never happen - but we want to make sure to not miss a problem
           logging.error(this, s"caught unexpected error while running activation: ${t}")
           Future.successful(
             ContainerProxy.constructWhiskActivation(
-              job,
+              Job("Run", job.action, job.msg, job.retryLogDeadline),
               None,
               Interval.zero,
               false,
@@ -976,7 +997,7 @@ class ContainerProxy(factory: (TransactionId,
 
   // Do as above, without the Runpart, limited storing of information because.
 
-  def initializeIt(container: Container, job: Initialize)(implicit tid: TransactionId): Future[Any] = {
+  def initializeIt(container: Container, job: Initialize, reschedule: Boolean = true)(implicit tid: TransactionId): Future[Any] = {
     val actionTimeout = job.action.limits.timeout.duration
     val (env, parameters) = ContainerProxy.partitionArguments(job.msg.content, job.msg.initArgs)
 
@@ -994,39 +1015,143 @@ class ContainerProxy(factory: (TransactionId,
       } else Map.empty
     }
     val initialize = stateData match {
-        case data: WarmedData =>
-          Future.successful(None)
-        case _ =>
-          val owEnv = (authEnvironment ++ environment + ("deadline" -> (Instant.now.toEpochMilli + actionTimeout.toMillis).toString.toJson)) map {
-            case (key, value) => "__OW_" + key.toUpperCase -> value
-          }
+      case data: WarmedData =>
+        Future.successful(None)
+      case _ =>
+        val owEnv = (authEnvironment ++ environment + ("deadline" -> (Instant.now.toEpochMilli + actionTimeout.toMillis).toString.toJson)) map {
+          case (key, value) => "__OW_" + key.toUpperCase -> value
+        }
 
-          container
-            .initialize(
-              job.action.containerInitializer(env ++ owEnv),
-              actionTimeout,
-              job.action.limits.concurrency.maxConcurrent)
-            .map(Some(_))
+        container
+          .initialize(
+            job.action.containerInitializer(env ++ owEnv),
+            actionTimeout,
+            job.action.limits.concurrency.maxConcurrent)
+          .map(Some(_))
     }
-    //initialize
-    //.map(_ => RunCompleted)
-    val activation = initialize
+
+    val activation: Future[WhiskActivation] = initialize
       .flatMap { initInterval =>
         //immediately setup warmedData for use (before first execution) so that concurrent actions can use it asap
         if (initInterval.isDefined) {
           self ! InitCompleted(WarmedData(container, job.msg.user.namespace.name, job.action, Instant.now, 1))
         }
-        Future.successful(())
+        val env = authEnvironment ++ environment ++ Map(
+          // compute deadline on invoker side avoids discrepancies inside container
+          // but potentially under-estimates actual deadline
+          "deadline" -> (Instant.now.toEpochMilli + actionTimeout.toMillis).toString.toJson)
+
+          //runInterval = initInterval weil Initialize
+
+        val initRunInterval = initInterval
+          .map(i => Interval(i.start.minusMillis(i.duration.toMillis), i.end))
+          .getOrElse(Interval.zero)
+        Future(ContainerProxy.constructWhiskActivation(
+          Job("Initialize", job.action, job.msg, job.retryLogDeadline),
+          initInterval,
+          initRunInterval,
+          Interval.zero.duration >= actionTimeout,
+          ActivationResponse.success()))
+
+      }
+      .recoverWith {
+      case h: ContainerHealthError =>
+        Future.failed(h)
+      // This should not happen in this case:
+      case InitializationError(interval, response) =>
+        logging.error(this, s"Caught an initializationerror in InitializeIt")
+        Future.successful(
+          ContainerProxy
+            .constructWhiskActivation(Job("Initialize", job.action, job.msg, job.retryLogDeadline), Some(interval), interval, interval.duration >= actionTimeout, response))
+      case t =>
+      // Actually, this should never happen - but we want to make sure to not miss a problem
+        logging.error(this, s"caught unexpected error while running initialization: ${t}")
+        Future.successful(
+          ContainerProxy.constructWhiskActivation(
+            Job("Initialize", job.action, job.msg, job.retryLogDeadline),
+            None,
+            Interval.zero,
+            false,
+            ActivationResponse.whiskError(Messages.abnormalRun)))
+      }
+
+    val splitAckMessagesPendingLogCollection = collectLogs.logsToBeCollected(job.action)
+    // Sending an active ack is an asynchronous operation. The result is forwarded as soon as
+    // possible for blocking activations so that dependent activations can be scheduled. The
+    // completion message which frees a load balancer slot is sent after the active ack future
+    // completes to ensure proper ordering.
+    val sendResult = if (job.msg.blocking) {
+      activation.map { result =>
+        val msg =
+          if (splitAckMessagesPendingLogCollection) ResultMessage(tid, result)
+          else CombinedCompletionAndResultMessage(tid, result, instance)
+        sendActiveAck(tid, result, job.msg.blocking, job.msg.rootControllerIndex, job.msg.user.namespace.uuid, msg)
+      }
+    } else {
+      // For non-blocking request, do not forward the result.
+      if (splitAckMessagesPendingLogCollection) Future.successful(())
+      else
+        activation.map { result =>
+          val msg = CompletionMessage(tid, result, instance)
+          sendActiveAck(tid, result, job.msg.blocking, job.msg.rootControllerIndex, job.msg.user.namespace.uuid, msg)
+        }
     }
-    .recover {
-          case t =>
-        // Actually, this should never happen - but we want to make sure to not miss a problem
-        logging.error(this, s"caught unexpected error while running activation: ${t}")
-        Future.failed(t)
+
+    val context = UserContext(job.msg.user)
+
+    // Adds logs to the raw activation.
+    val activationWithLogs: Future[Either[ActivationLogReadingError, WhiskActivation]] = activation
+      .flatMap { activation =>
+        // Skips log collection entirely, if the limit is set to 0
+        if (!splitAckMessagesPendingLogCollection) {
+          Future.successful(Right(activation))
+        } else {
+          val start = tid.started(this, LoggingMarkers.INVOKER_COLLECT_LOGS, logLevel = InfoLevel)
+          collectLogs(tid, job.msg.user, activation, container, job.action)
+            .andThen {
+              case Success(_) => tid.finished(this, start)
+              case Failure(t) => tid.failed(this, start, s"reading logs failed: $t")
+            }
+            .map(logs => Right(activation.withLogs(logs)))
+            .recover {
+              case LogCollectingException(logs) =>
+                Left(ActivationLogReadingError(activation.withLogs(logs)))
+              case _ =>
+                Left(ActivationLogReadingError(activation.withLogs(ActivationLogs(Vector(Messages.logFailure)))))
+            }
+        }
+      }
+
+    activationWithLogs
+      .map(_.fold(_.activation, identity))
+      .foreach { activation =>
+        // Sending the completion message to the controller after the active ack ensures proper ordering
+        // (result is received before the completion message for blocking invokes).
+        if (splitAckMessagesPendingLogCollection) {
+          sendResult.onComplete(
+            _ =>
+              sendActiveAck(
+                tid,
+                activation,
+                job.msg.blocking,
+                job.msg.rootControllerIndex,
+                job.msg.user.namespace.uuid,
+                CompletionMessage(tid, activation, instance)))
+        }
+        // Storing the record. Entirely asynchronous and not waited upon.
+        //storeActivation(tid, activation, context)
+      }
+
+    // Disambiguate activation errors and transform the Either into a failed/successful Future respectively.
+    activationWithLogs.flatMap {
+      case Right(act) if !act.response.isSuccess && !act.response.isApplicationError =>
+        Future.failed(ActivationUnsuccessfulError(act))
+      case Left(error) => Future.failed(error)
+      case Right(act)  => Future.successful(act)
     }
-    activation
   }
 }
+
 
 final case class ContainerProxyTimeoutConfig(idleContainer: FiniteDuration, pauseGrace: FiniteDuration)
 final case class ContainerProxyHealthCheckConfig(enabled: Boolean, checkPeriod: FiniteDuration, maxFails: Int)
@@ -1091,7 +1216,7 @@ object ContainerProxy {
    * @param response the response to return to the user
    * @return a WhiskActivation to be sent to the user
    */
-  def constructWhiskActivation(job: Run,
+  def constructWhiskActivation(job: Job,
                                initInterval: Option[Interval],
                                totalInterval: Interval,
                                isTimeout: Boolean,
