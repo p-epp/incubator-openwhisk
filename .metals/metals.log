@@ -6208,3 +6208,203 @@ WARN  no build target:
 WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala' because it doesn't belong to a build target.
 WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala
 WARN  no build target: 
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/tools/admin/src/main/scala/org/apache/openwhisk/core/database/LimitsCommand.scala
+  /Users/peppisch/openwhisk/openwhisk/tools/admin/src/main/scala/org/apache/openwhisk/core/database/UserCommand.scala
+  /Users/peppisch/openwhisk/openwhisk/tools/admin/src/main/scala/org/apache/openwhisk/core/cli/CommandMessages.scala
+  /Users/peppisch/openwhisk/openwhisk/tools/admin/src/main/scala/org/apache/openwhisk/core/cli/Main.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/test/scala/org/apache/openwhisk/standalone/DockerVersionTests.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/core/ExecManifestSupport.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/StandaloneDockerSupport.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/UserEventLauncher.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/Wsk.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/CouchDBLauncher.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/Unzip.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/PlaygroundLauncher.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/ServerStartupCheck.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/KafkaLauncher.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/StandaloneOpenWhisk.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/DockerVersion.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/LogbackConfigurator.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/ServiceInfoLogger.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/PreFlightChecks.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/ApiGwLauncher.scala
+  /Users/peppisch/openwhisk/openwhisk/core/standalone/src/main/scala/org/apache/openwhisk/standalone/InstallRouteMgmt.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InstanceIdAssigner.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InvokerReactive.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/LogStoreCollector.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/NamespaceBlacklist.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/MessagingActiveAck.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/Invoker.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/ProcessRunner.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/StandaloneDockerContainerFactory.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/DockerContainerFactory.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/DockerClient.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/RuncClient.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/DockerForMacContainerFactory.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/DockerClientWithFileAccess.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/DockerContainer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/docker/DockerCliLogStore.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerPool.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/kubernetes/KubernetesClient.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/kubernetes/WhiskPodBuilder.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/kubernetes/KubernetesContainer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/kubernetes/KubernetesContainerFactory.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/loadBalancer/LoadBalancer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/loadBalancer/InvokerPoolFactory.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/loadBalancer/CommonLoadBalancer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/loadBalancer/ShardingContainerPoolBalancer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/loadBalancer/InvokerSupervision.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/loadBalancer/FeedFactory.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/loadBalancer/LeanBalancer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Entities.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Namespaces.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/RestAPIs.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Activations.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/CorsSettings.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/WebActions.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Backend.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Controller.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/BasicAuthenticationDirective.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Packages.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Rules.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/AuthorizedRouteDispatcher.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/SequenceActions.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/PostActionActivation.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/PrimitiveActions.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/ApiUtils.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Triggers.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/AuthenticatedRoute.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Actions.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/LocalEntitlement.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/Collection.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/ActivationThrottler.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/Entitlement.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/RateThrottler.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/KindRestrictor.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/ActionCollection.scala
+  /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/entitlement/PackageCollection.scala
+  /Users/peppisch/openwhisk/openwhisk/core/cosmosdb/cache-invalidator/src/main/scala/org/apache/openwhisk/core/database/cosmosdb/cache/CacheInvalidator.scala
+  /Users/peppisch/openwhisk/openwhisk/core/cosmosdb/cache-invalidator/src/main/scala/org/apache/openwhisk/core/database/cosmosdb/cache/KafkaEventProducer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/cosmosdb/cache-invalidator/src/main/scala/org/apache/openwhisk/core/database/cosmosdb/cache/WhiskChangeEventObserver.scala
+  /Users/peppisch/openwhisk/openwhisk/core/cosmosdb/cache-invalidator/src/main/scala/org/apache/openwhisk/core/database/cosmosdb/cache/CacheInvalidatorConfig.scala
+  /Users/peppisch/openwhisk/openwhisk/core/cosmosdb/cache-invalidator/src/main/scala/org/apache/openwhisk/core/database/cosmosdb/cache/Main.scala
+  /Users/peppisch/openwhisk/openwhisk/core/cosmosdb/cache-invalidator/src/main/scala/org/apache/openwhisk/core/database/cosmosdb/cache/ChangeFeedConsumer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/test/scala/org/apache/openwhisk/core/monitoring/metrics/KamonRecorderTests.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/test/scala/org/apache/openwhisk/core/monitoring/metrics/PrometheusRecorderTests.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/test/scala/org/apache/openwhisk/core/monitoring/metrics/OpenWhiskEventsTests.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/test/scala/org/apache/openwhisk/core/monitoring/metrics/EventsTestHelper.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/test/scala/org/apache/openwhisk/core/monitoring/metrics/KafkaSpecBase.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/test/scala/org/apache/openwhisk/core/monitoring/metrics/ApiTests.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/main/scala/org/apache/openwhisk/core/monitoring/metrics/EventConsumer.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/main/scala/org/apache/openwhisk/core/monitoring/metrics/PrometheusEventsApi.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/main/scala/org/apache/openwhisk/core/monitoring/metrics/MetricNames.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/main/scala/org/apache/openwhisk/core/monitoring/metrics/OpenWhiskEvents.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/main/scala/org/apache/openwhisk/core/monitoring/metrics/KamonRecorder.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/main/scala/org/apache/openwhisk/core/monitoring/metrics/Main.scala
+  /Users/peppisch/openwhisk/openwhisk/core/monitoring/user-events/src/main/scala/org/apache/openwhisk/core/monitoring/metrics/PrometheusRecorder.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/tests/dat/actions/unicode.tests/src/java/unicode/src/main/java/Unicode.java
+  /Users/peppisch/openwhisk/openwhisk/tests/dat/actions/src/java/sleep/src/main/java/Sleep.java
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/resources/data/src/java/src/main/java/JavaAction.java
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/extension/whisk/OpenWhiskDsl.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/extension/whisk/OpenWhiskProtocolBuilder.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/extension/whisk/OpenWhiskActionBuilder.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/extension/whisk/Predef.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/BlockingInvokeOneActionSimulation.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/ApiV1Simulation.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/LatencySimulation.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/performance/gatling_tests/src/gatling/scala/org/apache/openwhisk/ColdBlockingInvokeSimulation.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/src/test/scala/apigw/healthtests/ApiGwEndToEndTests.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/src/test/scala/apigw/healthtests/ApiGwRestEndToEndTests.scala
+  /Users/peppisch/openwhisk/openwhisk/tests/src/test/scala/invokerShoot/ShootInvokerTests.scala
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InvokerReactive.scala
+Mär 01, 2020 8:37:29 PM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+Mär 01, 2020 8:37:30 PM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+Mär 01, 2020 8:37:32 PM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala
+WARN  no build target: 
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/Invoker.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/LogStoreCollector.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/MessagingActiveAck.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/NamespaceBlacklist.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InvokerReactive.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/Invoker.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InstanceIdAssigner.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/LogStoreCollector.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/LogStore.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/LogDriverLogStore.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/ElasticSearchRestClient.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/ElasticSearchLogStore.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+Mär 01, 2020 8:50:49 PM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationFileLogStore.scala
+something's wrong: no file:///Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerPool.scala in Option[org.apache.openwhisk.core.containerpool.Job]RangePosition(file:///Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerPool.scala, 3562, 3562, 3573)
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/ApacheBlockingContainerClient.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/Container.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerClient.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerFactory.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/AkkaContainerClient.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InvokerReactive.scala
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InvokerReactive.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  no build target: 
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  no build target: 
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  no build target: 
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  no build target: 
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  no build target: 
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala' because it doesn't belong to a build target.
+something's wrong: no file:///Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala in Option[<error>]RangePosition(file:///Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala, 12654, 12654, 12683)
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  no build target: 
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  no build target: 
+Mär 01, 2020 9:06:38 PM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  no build target: 
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationFileLogStore.scala
+WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala' because it doesn't belong to a build target.
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+WARN  no build target: 
