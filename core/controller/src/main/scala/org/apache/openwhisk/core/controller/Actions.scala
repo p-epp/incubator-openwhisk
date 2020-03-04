@@ -276,7 +276,7 @@ trait WhiskActionsApi extends WhiskCollectionAPI with PostActionActivation with 
                        waitOverride: FiniteDuration,
                        result: Boolean)(implicit transid: TransactionId): RequestContext => Future[RouteResult] = {
     val waitForResponse = if (blocking) Some(waitOverride) else None
-    onComplete(invokeAction(user, actionWithMergedParams, payload, Future.successful(None), waitForResponse, cause = None)) {
+    onComplete(invokeAction(user, actionWithMergedParams, payload, None, waitForResponse, cause = None)) {
       case Success(Left(activationId)) =>
         // non-blocking invoke or blocking invoke which got queued instead
         respondWithActivationIdHeader(activationId) {

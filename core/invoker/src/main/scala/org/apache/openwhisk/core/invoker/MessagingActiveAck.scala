@@ -40,8 +40,7 @@ class MessagingActiveAck(producer: MessageProducer, instance: InvokerInstanceId,
     extends ActiveAck {
 
   private val source = if (!initOnly) s"invoker${instance.instance}" else s"invoker_init${instance.instance}"
-  // TODO: source so friemeln, dass das init topic auch geacked wird.
-  //private val initSource = s"invoker_init${instance.instance}"
+
   override def apply(tid: TransactionId,
                      activationResult: WhiskActivation,
                      blockingInvoke: Boolean,
@@ -54,7 +53,7 @@ class MessagingActiveAck(producer: MessageProducer, instance: InvokerInstanceId,
       producer.send(topic = "completed" + controllerInstance.asString, msg).andThen {
         case Success(_) =>
           val info = if (recovery) s"recovery ${msg.messageType}" else msg.messageType
-          logging.info(this, s"posted $info of activation ${acknowledegment.activationId}")
+          logging.debug(this, s"posted $info of activation ${acknowledegment.activationId}")
       }
     }
 

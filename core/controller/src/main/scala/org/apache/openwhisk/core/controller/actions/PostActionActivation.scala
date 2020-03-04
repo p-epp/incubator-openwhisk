@@ -48,7 +48,7 @@ protected[core] trait PostActionActivation extends PrimitiveActions with Sequenc
     user: Identity,
     action: WhiskActionMetaData,
     payload: Option[JsObject],
-    initActivationID: Future[Option[ActivationId]],
+    initActivationID: Option[ActivationId],
     waitForResponse: Option[FiniteDuration],
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[Either[ActivationId, WhiskActivation]] = {
     action.toExecutableWhiskAction match {

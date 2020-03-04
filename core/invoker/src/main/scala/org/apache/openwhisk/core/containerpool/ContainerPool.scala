@@ -238,7 +238,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
 
     case i: Initialize =>
       // Check if the message is resent from the buffer. Only the first message on the buffer can be resent.
-      logging.info(this, "Initialize has been triggered.")
+      logging.info(this, s"Initialize Message for ${i.action} reached Containerpool.")
       val isResentFromBuffer = runBuffer.nonEmpty && runBuffer.dequeueOption.exists(_._1.msg == i.msg)
 
       // Only process request, if there are no other requests waiting for free slots, or if the current request is the
@@ -292,14 +292,14 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
             //only move to busyPool if max reached
             if (!newData.hasCapacity()) {
               if (i.action.limits.concurrency.maxConcurrent > 1) {
-                logging.info(
+                logging.debug(
                   this,
                   s"container ${container} is now busy with ${newData.activeActivationCount} activations")
               }
               busyPool = busyPool + (actor -> newData)
               freePool = freePool - actor
 
-              logging.info(this, s"${freePool.count(z => true)} free containers available")
+              logging.debug(this, s"${freePool.count(z => true)} free containers available")
             } else {
               //update freePool to track counts
               freePool = freePool + (actor -> newData)
@@ -365,7 +365,7 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
         if (busyPool.contains(sender())) {
           busyPool = busyPool - sender()
           if (newData.action.limits.concurrency.maxConcurrent > 1) {
-            logging.info(
+            logging.debug(
               this,
               s"concurrent container ${newData.container} is no longer busy with ${newData.activeActivationCount} activations")
           }

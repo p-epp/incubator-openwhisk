@@ -31,8 +31,6 @@ import org.apache.openwhisk.core.containerpool.Container
 import org.apache.openwhisk.core.entity._
 import org.apache.openwhisk.http.Messages
 import org.apache.openwhisk.core.database.UserContext
-import org.apache.openwhisk.common.{AkkaLogging}
-
 
 import scala.concurrent.{ExecutionContext, Future}
 import spray.json._
@@ -65,12 +63,9 @@ object DockerToActivationLogStore {
 class DockerToActivationLogStore(system: ActorSystem) extends LogStore {
   implicit val ec: ExecutionContext = system.dispatcher
   implicit val mat: ActorMaterializer = ActorMaterializer()(system)
-  private val logging = new AkkaLogging(system.log)
 
   /* "json-file" is the log-driver that writes out to file */
   override val containerParameters = Map("--log-driver" -> Set("json-file"))
-
-
 
   /* As logs are already part of the activation record, just return that bit of it */
   override def fetchLogs(activation: WhiskActivation, context: UserContext): Future[ActivationLogs] =
@@ -113,7 +108,6 @@ class DockerToActivationLogStore(system: ActorSystem) extends LogStore {
     // that log collection continues if the action code still logs after developer error.
     val waitForSentinel = sentinelledLogs && !isDeveloperError
     val logs = container.logs(logLimit.asMegaBytes, waitForSentinel)(transid)
-    logging.info(this, s"inside logStream")
     val logsWithPossibleError = if (isDeveloperError) {
       logs.concat(
         Source.single(
@@ -176,7 +170,7 @@ class DockerToActivationLogStore(system: ActorSystem) extends LogStore {
     val logLimit = action.limits.logs
     val isDeveloperError = activation.response.isContainerError // container error means developer error
     val logs = logStream(transid, container, logLimit, action.exec.sentinelledLogs, isDeveloperError)
-    logging.info(this, s"collecting logs: limit: ${logLimit} developererror: ${isDeveloperError} logs: ${logs}")
+
     logs
       .via(DockerToActivationLogStore.toFormattedString)
       .runWith(Sink.seq)

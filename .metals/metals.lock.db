@@ -1,6 +1,6 @@
 #FileLock
-#Sat Feb 29 20:44:10 CET 2020
-hostName=10.208.49.125
-id=170927a40804f5e23cd6c85cb3b574ffdf94e3effce
+#Wed Mar 04 13:49:43 CET 2020
+hostName=client-141-23-192-21.wlan.tu-berlin.de
+id=170a5983f13c29376cb14f028a54b289fb0c2ffe035
 method=file
-server=10.208.49.125\:51881
+server=141.23.192.21\:61132

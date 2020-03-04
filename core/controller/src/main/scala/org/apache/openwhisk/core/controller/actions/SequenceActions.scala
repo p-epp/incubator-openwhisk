@@ -70,7 +70,7 @@ protected[actions] trait SequenceActions {
     user: Identity,
     action: WhiskActionMetaData,
     payload: Option[JsObject],
-    activationID: Future[Option[ActivationId]],
+    activationID: Option[ActivationId],
     waitForResponse: Option[FiniteDuration],
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[Either[ActivationId, WhiskActivation]]
 
@@ -108,14 +108,6 @@ protected[actions] trait SequenceActions {
       // even though the result of completeSequenceActivation is Right[WhiskActivation],
       // use a more general type for futureSeqResult in case a blocking invoke takes
       // longer than expected and we must return Left[ActivationId] instead
-
-    /**
-    * TODO: Ab hier wäre möglicherweise ein guter Zeitpunkt um die Inits gestartet zu haben
-    *
-    */
-
-
-
 
       completeSequenceActivation(
         seqActivationId,
@@ -260,8 +252,6 @@ protected[actions] trait SequenceActions {
    * @return a future which resolves with the accounting for a sequence, including the last result, duration, and activation ids
    */
 
-/** TODO: Continue from Here */
-
 
   private def invokeSequenceComponents(
     user: Identity,
@@ -289,12 +279,25 @@ protected[actions] trait SequenceActions {
       SequenceAccounting(atomicActionCnt, ActivationResponse.payloadPlaceholder(inputPayload))
     }
 
-    //Initialize every Action, when it becomes available
-    val initializedFutureActions = resolvedFutureActions
-      .map { futureAction =>
-        //Create a Tuple of Action and resolved ActivationID
-        (futureAction,invokeInitialization(user, futureAction, cause))
-      }
+    // Maybe for not putting in Initializetype Duplicates later.
+    var distinctFutureActions = resolvedFutureActions.distinct.toBuffer
+
+    //Create a Tuple of Action and resolved ActivationID
+    // Initialize every Action of the Sequence, ignore the first Action, because an Init would be useless.
+    val initializedFutureActions : Vector[(Future[WhiskActionMetaData], Option[ActivationId])] =
+      // No initialization for first Action because performance
+      (resolvedFutureActions.head,None) +:
+      (resolvedFutureActions.tail.map
+        { futureAction =>
+          // Make sure that only one Initialization is Sent per kind (Does not work)
+          if (distinctFutureActions.contains(futureAction)) {
+            distinctFutureActions = distinctFutureActions - futureAction
+            (futureAction,invokeInitialization(user, futureAction, cause))
+          }
+          else {
+            (futureAction,None)
+          }
+        })
 
 
 
@@ -348,7 +351,7 @@ protected[actions] trait SequenceActions {
   private def invokeNextAction(
     user: Identity,
     futureAction: Future[WhiskActionMetaData],
-    initActivationID: Future[Option[ActivationId]],
+    initActivationID: Option[ActivationId],
     accounting: SequenceAccounting,
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[SequenceAccounting] = {
 
@@ -427,11 +430,11 @@ protected[actions] trait SequenceActions {
   private def invokeInitialization(
     user: Identity,
     futureAction: Future[WhiskActionMetaData],
-    cause: Option[ActivationId])(implicit transid: TransactionId): Future[Option[ActivationId]] = { // No return Values (not needed) for now...
+    cause: Option[ActivationId])(implicit transid: TransactionId): Option[ActivationId] = { // No return Values (not needed) for now...
 
     // Define it for compatibility, but not needed for initializing
     val waitForResponse = None
-
+    val activationId = activationIdFactory.make()
     futureAction.flatMap { action =>
 
       val futureWhiskActivationTuple = action.toExecutableWhiskAction match {
@@ -450,7 +453,7 @@ protected[actions] trait SequenceActions {
           val payload: Option[JsObject] = Some(JsObject.empty)
           val args = action.parameters merge payload
           // ActivationID wird von tatsächlicher Activation abweichen
-          val activationId = activationIdFactory.make()
+          //val activationId = activationIdFactory.make()
 
           // val startActivation = transid.started(
           //   this,
@@ -476,11 +479,14 @@ protected[actions] trait SequenceActions {
           Future.successful(Some(message.activationId))
         }
         futureWhiskActivationTuple
+
         // .map {
         //   case _ => println("WTF")
         // }
 
       }
+      // Only activationId needed because Initialization
+      Some(activationId)
     }
       // futureWhiskActivationTuple
       //   .map {

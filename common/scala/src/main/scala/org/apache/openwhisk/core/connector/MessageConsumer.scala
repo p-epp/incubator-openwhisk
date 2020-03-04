@@ -214,8 +214,7 @@ class MessageFeed(description: String,
       val (topic, partition, offset, bytes) = outstandingMessages.head
       outstandingMessages = outstandingMessages.tail
 
-      if (logHandoff) logging.info(this, s"processing $topic[$partition][$offset] ($occupancy/$handlerCapacity)")
-      logging.info(this, s"processing $topic[$partition][$offset] ($occupancy/$handlerCapacity)")
+      if (logHandoff) logging.debug(this, s"processing $topic[$partition][$offset] ($occupancy/$handlerCapacity)")
       handler(bytes)
       handlerCapacity -= 1
 
@@ -237,8 +236,6 @@ class MessageFeed(description: String,
   }
 
   private def updateHandlerCapacity(): Int = {
-    logging.info(self, s"$description received processed msg, current capacity = $handlerCapacity")
-
     if (handlerCapacity < maximumHandlerCapacity) {
       handlerCapacity += 1
       handlerCapacity

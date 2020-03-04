@@ -40,7 +40,7 @@ import org.apache.openwhisk.core.ConfigKeys
 
 import scala.collection.mutable.Buffer
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise, Await}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -110,7 +110,7 @@ protected[actions] trait PrimitiveActions {
     user: Identity,
     action: ExecutableWhiskActionMetaData,
     payload: Option[JsObject],
-    initActivationID: Future[Option[ActivationId]],
+    initActivationID: Option[ActivationId],
     waitForResponse: Option[FiniteDuration],
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[Either[ActivationId, WhiskActivation]] = {
 
@@ -154,7 +154,7 @@ protected[actions] trait PrimitiveActions {
     user: Identity,
     action: ExecutableWhiskActionMetaData,
     payload: Option[JsObject],
-    initActivationID: Future[Option[ActivationId]],
+    initActivationID: Option[ActivationId],
     waitForResponse: Option[FiniteDuration],
     cause: Option[ActivationId])(implicit transid: TransactionId): Future[Either[ActivationId, WhiskActivation]] = {
 
@@ -163,10 +163,7 @@ protected[actions] trait PrimitiveActions {
 
     // set activationId correctly depending on passed on activationID (Wait 0 seconds (0 seconds does not work) but get Value)
 
-    val activationId: ActivationId = Await.result(initActivationID, 1 seconds) match {
-      case blub: Option[ActivationId] => blub.getOrElse(activationIdFactory.make())
-      case _ => activationIdFactory.make()
-    }
+    val activationId: ActivationId = initActivationID.getOrElse(activationIdFactory.make())
 
 
 
@@ -345,7 +342,7 @@ protected[actions] trait PrimitiveActions {
           user,
           action = session.action,
           payload = params,
-          initActivationID = Future.successful(None),
+          initActivationID = None,
           waitForResponse = Some(session.action.limits.timeout.duration + 1.minute), // wait for result
           cause = Some(session.activationId)) // cause is session id
 
@@ -470,7 +467,7 @@ protected[actions] trait PrimitiveActions {
           user,
           action,
           payload,
-          Future.successful(None),
+          None,
           waitForResponse = Some(action.limits.timeout.duration + 1.minute),
           cause = Some(session.activationId))
       case None => // sequence

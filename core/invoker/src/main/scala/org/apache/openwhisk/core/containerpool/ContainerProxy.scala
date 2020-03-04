@@ -368,7 +368,6 @@ class ContainerProxy(factory: (TransactionId,
 
     case Event(job: Initialize, _) =>
       implicit val transid = job.msg.transid
-      logging.info(this, s"Initializing Container on Cold Start Container.")
       activeCount += 1
       // create a new container
       val container = factory(
@@ -388,6 +387,7 @@ class ContainerProxy(factory: (TransactionId,
           case Success(container) =>
             // the container is ready to accept an activation; register it as PreWarmed; this
             // normalizes the life cycle for containers and their cleanup when activations fail
+
             self ! PreWarmCompleted(
               PreWarmedData(container, job.action.exec.kind, job.action.limits.memory.megabytes.MB, 1))
 
@@ -412,6 +412,7 @@ class ContainerProxy(factory: (TransactionId,
           // now attempt to inject the user code and run the action
           //initializeAndRun(container, job)
           initializeIt(container, job)
+          .map(_ => RunCompleted)
         }
         .pipeTo(self)
 
@@ -447,7 +448,6 @@ class ContainerProxy(factory: (TransactionId,
       initializeIt(data.container, job)
         .map(_=> InitCompleted)
         .pipeTo(self)
-      logging.info(this,s"Initialized on preWarmed Container ${data.container}")
 
       goto(Running) using PreWarmedData(data.container, data.kind, data.memoryLimit, 1)
 
@@ -467,28 +467,24 @@ class ContainerProxy(factory: (TransactionId,
     // Run during prewarm init (for concurrent > 1)
     case Event(job: Run, data: PreWarmedData) =>
       implicit val transid = job.msg.transid
-      logging.info(this, s"buffering for warming container ${data.container}; ${activeCount} activations in flight")
       runBuffer = runBuffer.enqueue(Job("Run",job.action, job.msg, job.retryLogDeadline))
       stay()
 
     // Run during cold init (for concurrent > 1)
     case Event(job: Run, _: NoData) =>
       implicit val transid = job.msg.transid
-      logging.info(this, s"buffering for cold warming container ${activeCount} activations in flight")
       runBuffer = runBuffer.enqueue(Job("Run",job.action, job.msg, job.retryLogDeadline))
       stay()
 
       // Run during prewarm init (for concurrent > 1)
       case Event(job: Initialize, data: PreWarmedData) =>
         implicit val transid = job.msg.transid
-        logging.info(this, s"buffering Init for warming container ${data.container}; ${activeCount} activations in flight")
         runBuffer = runBuffer.enqueue(Job("Initialize",job.action, job.msg, job.retryLogDeadline))
         stay()
 
       // Run during cold init (for concurrent > 1)
       case Event(job: Initialize, _: NoData) =>
         implicit val transid = job.msg.transid
-        logging.info(this, s"buffering Init for cold warming container ${activeCount} activations in flight")
         runBuffer = runBuffer.enqueue(Job("Initialize",job.action, job.msg, job.retryLogDeadline))
         stay()
 
@@ -526,7 +522,6 @@ class ContainerProxy(factory: (TransactionId,
     case Event(job: Run, data: WarmedData)
         if activeCount >= data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if we are over concurrency limit, and not a failure on resume
       implicit val transid = job.msg.transid
-      logging.warn(this, s"buffering for maxed warm container ${data.container}; ${activeCount} activations in flight")
       runBuffer = runBuffer.enqueue(Job("Run",job.action, job.msg, job.retryLogDeadline))
       stay()
     case Event(job: Run, data: WarmedData)
@@ -543,10 +538,9 @@ class ContainerProxy(factory: (TransactionId,
       case Event(job: Initialize, data: WarmedData)
           if activeCount >= data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if we are over concurrency limit, and not a failure on resume
         implicit val transid = job.msg.transid
-        //logging.info(this, s"Trying to Initialize Warm Container ${data.container}. Dropping Request.")
-        logging.warn(this, s"buffering Init for maxed warm container ${data.container}; ${activeCount} activations in flight")
         runBuffer = runBuffer.enqueue(Job("Initialize",job.action, job.msg, job.retryLogDeadline))
         stay()
+
       case Event(job: Initialize, data: WarmedData)
           if activeCount < data.action.limits.concurrency.maxConcurrent && !rescheduleJob => //if there was a delay, and not a failure on resume, skip the run
         activeCount += 1
@@ -607,12 +601,12 @@ class ContainerProxy(factory: (TransactionId,
     case Event(job: Initialize, data: WarmedData) =>
       implicit val transid = job.msg.transid
       activeCount += 1
-
+      val newData = data.withResumeRun(Job("Initialize", job.action, job.msg, job.retryLogDeadline))
       initializeIt(data.container, job)
-      .map(_ => InitCompleted)
+      .map(_ => RunCompleted)
       .pipeTo(self)
 
-      goto(Running) using data
+      goto(Running) using newData
 
     // pause grace timed out
     case Event(StateTimeout, data: WarmedData) =>
@@ -622,14 +616,17 @@ class ContainerProxy(factory: (TransactionId,
     case Event(Remove, data: WarmedData) => destroyContainer(data)
 
     // warm container failed
-    case Event(_: FailureMessage, data: WarmedData) =>
+    case Event(failure: FailureMessage, data: WarmedData) =>
+      logging.error(this, s"destroying - Warm Container Failed with ${failure}")
       destroyContainer(data)
   }
 
   when(Pausing) {
-    case Event(ContainerPaused, data: WarmedData)   => goto(Paused)
-    case Event(_: FailureMessage, data: WarmedData) => destroyContainer(data)
-    case _                                          => delay
+    case Event(ContainerPaused, data: WarmedData)         => goto(Paused)
+    case Event(failure: FailureMessage, data: WarmedData) =>
+      logging.error(this, s"Destroying Container because of ${failure} ")
+      destroyContainer(data)
+    case _                                                => delay
   }
 
   when(Paused, stateTimeout = unusedTimeout) {
@@ -668,13 +665,14 @@ class ContainerProxy(factory: (TransactionId,
             self ! job
         }
         .flatMap(_ => initializeIt(data.container, job))
-        .map(_ => InitCompleted)
+        .map(_ => RunCompleted)
         .pipeTo(self)
 
         goto(Running) using data
 
     // container is reclaimed by the pool or it has become too old
     case Event(StateTimeout | Remove, data: WarmedData) =>
+      logging.error(this, s"Containertimeout / Remove on Paused, removing Container")
       rescheduleJob = true // to supress sending message to the pool and not double count
       destroyContainer(data)
   }
@@ -1046,6 +1044,7 @@ class ContainerProxy(factory: (TransactionId,
         val initRunInterval = initInterval
           .map(i => Interval(i.start.minusMillis(i.duration.toMillis), i.end))
           .getOrElse(Interval.zero)
+
         Future(ContainerProxy.constructWhiskActivation(
           Job("Initialize", job.action, job.msg, job.retryLogDeadline),
           initInterval,
@@ -1075,22 +1074,18 @@ class ContainerProxy(factory: (TransactionId,
             ActivationResponse.whiskError(Messages.abnormalRun)))
       }
 
-    val splitAckMessagesPendingLogCollection = collectLogs.logsToBeCollected(job.action)
-    // Sending an active ack is an asynchronous operation. The result is forwarded as soon as
-    // possible for blocking activations so that dependent activations can be scheduled. The
-    // completion message which frees a load balancer slot is sent after the active ack future
     // completes to ensure proper ordering.
     val sendResult = if (job.msg.blocking) {
       activation.map { result =>
         val msg =
-          if (splitAckMessagesPendingLogCollection) ResultMessage(tid, result)
-          else CombinedCompletionAndResultMessage(tid, result, instance)
+          CombinedCompletionAndResultMessage(tid, result, instance)
         sendActiveAck(tid, result, job.msg.blocking, job.msg.rootControllerIndex, job.msg.user.namespace.uuid, msg)
+        }
       }
-    } else {
+      else {
       // For non-blocking request, do not forward the result.
-      if (splitAckMessagesPendingLogCollection) Future.successful(())
-      else
+      //if (splitAckMessagesPendingLogCollection) Future.successful(())
+      //else
         activation.map { result =>
           val msg = CompletionMessage(tid, result, instance)
           sendActiveAck(tid, result, job.msg.blocking, job.msg.rootControllerIndex, job.msg.user.namespace.uuid, msg)
@@ -1102,50 +1097,14 @@ class ContainerProxy(factory: (TransactionId,
     // Adds logs to the raw activation.
     val activationWithLogs: Future[Either[ActivationLogReadingError, WhiskActivation]] = activation
       .flatMap { activation =>
-        // Skips log collection entirely, if the limit is set to 0
-        if (!splitAckMessagesPendingLogCollection) {
           Future.successful(Right(activation))
-        } else {
-          val start = tid.started(this, LoggingMarkers.INVOKER_COLLECT_LOGS, logLevel = InfoLevel)
-          collectLogs(tid, job.msg.user, activation, container, job.action)
-            .andThen {
-              case Success(_) => tid.finished(this, start)
-              case Failure(t) => tid.failed(this, start, s"reading logs failed: $t")
-            }
-            .map(logs => Right(activation.withLogs(logs)))
-            .recover {
-              case LogCollectingException(logs) =>
-                Left(ActivationLogReadingError(activation.withLogs(logs)))
-              case _ =>
-                Left(ActivationLogReadingError(activation.withLogs(ActivationLogs(Vector(Messages.logFailure)))))
-            }
-        }
-      }
-
-    activationWithLogs
-      .map(_.fold(_.activation, identity))
-      .foreach { activation =>
-        // Sending the completion message to the controller after the active ack ensures proper ordering
-        // (result is received before the completion message for blocking invokes).
-        if (splitAckMessagesPendingLogCollection) {
-          sendResult.onComplete(
-            _ =>
-              sendActiveAck(
-                tid,
-                activation,
-                job.msg.blocking,
-                job.msg.rootControllerIndex,
-                job.msg.user.namespace.uuid,
-                CompletionMessage(tid, activation, instance)))
-        }
-        // Storing the record. Entirely asynchronous and not waited upon.
-        //storeActivation(tid, activation, context)
       }
 
     // Disambiguate activation errors and transform the Either into a failed/successful Future respectively.
     activationWithLogs.flatMap {
       case Right(act) if !act.response.isSuccess && !act.response.isApplicationError =>
         Future.failed(ActivationUnsuccessfulError(act))
+        // Gibt folgenden Case zurück todo
       case Left(error) => Future.failed(error)
       case Right(act)  => Future.successful(act)
     }

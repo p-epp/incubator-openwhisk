@@ -181,7 +181,7 @@ class InvokerReactive(
 
 
   private val activationFeed = actorSystem.actorOf(Props {
-    new MessageFeed("activation/initialization", logging, consumer, maxPeek, 1.second, processActivationMessage)
+    new MessageFeed("activation", logging, consumer, maxPeek, 1.second, processActivationMessage)
   })
 
   private val initializationFeed = actorSystem.actorOf(Props {
@@ -323,8 +323,9 @@ class InvokerReactive(
           Future.successful(())
       }
   }
+  //Handler for Initializations
   def processInitializationMessage(bytes: Array[Byte]): Future[Unit] = {
-    logging.info(this, s"entering processInitializationMessage")
+    //logging.info(this, s"entering processInitializationMessage")
     Future(ActivationMessage.parse(new String(bytes, StandardCharsets.UTF_8)))
       .flatMap(Future.fromTry)
       .flatMap { msg =>
@@ -342,7 +343,6 @@ class InvokerReactive(
           val subject = msg.user.subject
 
           logging.debug(this, s"Initialization of: ${actionid.id} $subject ${msg.activationId}")
-          logging.info(this, s"Simple Initialization going: ${actionid.id} $subject ${msg.activationId}")
           // caching is enabled since actions have revision id and an updated
           // action will not hit in the cache due to change in the revision id;
           // if the doc revision is missing, then bypass cache

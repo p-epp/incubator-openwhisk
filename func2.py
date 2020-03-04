@@ -4,9 +4,9 @@
 
 def main(args):
     number = args.get("number")
-    square = number*number
+    square = number+number
     print(square)
-    return {"square":square}
+    return {"number":square}
 
 #if __name__=="__main__":
 #    main({"number":4})
