@@ -35,7 +35,7 @@ exclude_logs_from: []
 #   whisk_api_host_name (second)
 #   whisk_api_localhost_name_default (last)
 whisk_api_localhost_name_default: "localhost"
-
+whisk_api_localhost_name: "guest.openwhisk-host"
 # Type of your environment.
 # If you want to deploy everything on your local machine use 'local'.
 # If you use a docker-machine on a mac use 'docker-machine'

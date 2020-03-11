@@ -7847,3 +7847,64 @@ WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/open
 WARN  no build target: 
 WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala' because it doesn't belong to a build target.
 WARN  code navigation does not work for the file '/Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala' because it doesn't belong to a build target.
+INFO  time: initialize in 2.82s
+INFO  skipping build import with status 'Dismissed'
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/connector/MessageConsumer.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/ack/MessagingActiveAck.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/ack/Ack.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/Container.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/entity/ActivationResult.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/SequenceActions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Actions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/PostActionActivation.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/PrimitiveActions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/WebActions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala
+INFO  no build target: using presentation compiler with only scala-library
+Mär 11, 2020 2:49:00 AM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/entity/WhiskActivation.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/entity/WhiskAction.scala
+something's wrong: no file:///Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala in Option[<error>]RangePosition(file:///Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala, 50043, 50043, 50059)
+Mär 11, 2020 3:23:30 AM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerPool.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/invoker/InvokerReactive.scala
+Mär 11, 2020 3:48:40 AM scala.meta.internal.pc.CompilerAccess handleError
+SCHWERWIEGEND: null
+java.lang.NullPointerException
+	at scala.meta.internal.pc.HoverProvider.seenFromType(HoverProvider.scala:106)
+	at scala.meta.internal.pc.HoverProvider.hover(HoverProvider.scala:42)
+
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Backend.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/ApiUtils.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Controller.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/RestAPIs.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/BasicAuthenticationDirective.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/tests/src/test/scala/org/apache/openwhisk/core/cli/test/WskWebActionsTests.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/tests/src/test/scala/system/rest/RestUtil.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/WhiskConfig.scala
+INFO  shutting down Metals
+INFO  time: initialize in 2.25s
+INFO  skipping build import with status 'Dismissed'
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/connector/MessageConsumer.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/invoker/src/main/scala/org/apache/openwhisk/core/containerpool/ContainerProxy.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/ack/MessagingActiveAck.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/ack/Ack.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/Container.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/entity/ActivationResult.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/SequenceActions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/Actions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/PostActionActivation.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/actions/PrimitiveActions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/core/controller/src/main/scala/org/apache/openwhisk/core/controller/WebActions.scala
+WARN  no build target: /Users/peppisch/openwhisk/openwhisk/common/scala/src/main/scala/org/apache/openwhisk/core/containerpool/logging/DockerToActivationLogStore.scala

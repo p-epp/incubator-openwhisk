@@ -25,14 +25,6 @@ import org.apache.openwhisk.core.entity._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-trait EventSender {
-  def send(msg: => EventMessage): Unit
-}
-
-class UserEventSender(producer: MessageProducer) extends EventSender {
-  override def send(msg: => EventMessage): Unit = UserEvents.send(producer, msg)
-}
-
 class MessagingActiveAck(producer: MessageProducer, instance: InvokerInstanceId, eventSender: Option[EventSender], initOnly: Boolean = false)(
   implicit logging: Logging,
   ec: ExecutionContext)
