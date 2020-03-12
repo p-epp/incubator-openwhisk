@@ -20,7 +20,7 @@ config_root_dir: "{{ openwhisk_tmp_dir }}/wskconf"
 whisk_logs_dir: "{{ openwhisk_tmp_dir }}/wsklogs"
 coverage_enabled: "{{ lookup('env', 'GRADLE_COVERAGE') | default('false', true) | bool}}"
 coverage_logs_dir: "{{ openwhisk_tmp_dir }}/wskcov"
-docker_registry: "$(curl -s http://169.254.169.254/latest/meta-data/public-hostname):444/"
+docker_registry: "ec2-54-227-215-138.compute-1.amazonaws.com:444/"
 # docker_dns: ""
 runtimes_bypass_pull_for_local_images: true
 invoker_use_runc: "{{ ansible_distribution != 'MacOSX' }}"
@@ -55,6 +55,6 @@ invoker_use_runc: false
 
 metrics_kamon: true
 metrics_kamon_tags: false
-metrics_kamon_statsd_host: "$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+metrics_kamon_statsd_host: "ec2-54-227-215-138.compute-1.amazonaws.com"
 metrics_kamon_statsd_port: '8125'
 metrics_log: true
