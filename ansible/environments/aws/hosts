@@ -3,29 +3,32 @@
 ; used for local actions only
 ansible ansible_connection=local
 
+
+
 [edge]
-172.31.128.13         ansible_host=172.31.128.13 ansible_connection=local
+ec2-54-161-211-41.compute-1.amazonaws.com         ansible_host=ec2-54-161-211-41.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
 
 [controllers]
-172.31.128.13         ansible_host=172.31.128.13 ansible_connection=local
+ec2-54-161-211-41.compute-1.amazonaws.com         ansible_host=ec2-54-161-211-41.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
 
 [kafkas]
-172.31.128.12              ansible_host=172.31.128.12 ansible_connection=local
+ec2-3-86-82-73.compute-1.amazonaws.com      ansible_host=ec2-3-86-82-73.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
 
 
 [zookeepers:children]
 kafkas
 
 [invokers]
-invoker0            ansible_host=5.9.20.92 ansible_connection=ssh
-invoker1            ansible_host=144.76.27.183 ansible_connection=ssh
+invoker0            ansible_host=ec2-18-206-254-96.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
+invoker1            ansible_host=ec2-54-234-174-138.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
+invoker2            ansible_host=ec2-3-95-188-195.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
 
 ; db group is only used if db.provider is CouchDB
 [db]
-172.31.128.26         ansible_host=172.31.128.26 ansible_connection=local
+ec2-54-161-211-41.compute-1.amazonaws.com         ansible_host=ec2-54-161-211-41.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
 
 [redis]
-172.31.128.26          ansible_host=172.31.128.26 ansible_connection=local
+ec2-54-161-211-41.compute-1.amazonaws.com         ansible_host=ec2-54-161-211-41.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
 
 [apigateway]
-172.31.128.26          ansible_host=172.31.128.26 ansible_connection=local
+ec2-54-161-211-41.compute-1.amazonaws.com         ansible_host=ec2-54-161-211-41.compute-1.amazonaws.com ansible_connection=ssh ansible_ssh_private_key_file=/home/ubuntu/openwhisk.pem
