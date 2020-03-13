@@ -32,7 +32,7 @@ include 'tools:dev'
 
 include 'tools:admin'
 
-rootProject.name = 'openwhisk'
+rootProject.name = 'incubator-openwhisk'
 
 gradle.ext.scala = [
     version: '2.12.10',
