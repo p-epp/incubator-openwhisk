@@ -67,13 +67,13 @@
         </collectionProp>
       </HeaderManager>
       <hashTree/>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Measurementphase Homo" enabled="true">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="WarmUp Homo" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">startnextloop</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Schleifen-Controller (Loop Controller)" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <stringProp name="LoopController.loops">1</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">200</stringProp>
+        <stringProp name="ThreadGroup.num_threads">300</stringProp>
         <stringProp name="ThreadGroup.ramp_time">100</stringProp>
         <boolProp name="ThreadGroup.scheduler">false</boolProp>
         <stringProp name="ThreadGroup.duration"></stringProp>
@@ -81,8 +81,33 @@
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
       </ThreadGroup>
       <hashTree>
+        <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Growth" enabled="true">
+          <collectionProp name="load_profile">
+            <collectionProp name="1926184336">
+              <stringProp name="48">0</stringProp>
+              <stringProp name="51">3</stringProp>
+              <stringProp name="49710">240</stringProp>
+            </collectionProp>
+            <collectionProp name="141474369">
+              <stringProp name="56">8</stringProp>
+              <stringProp name="56">8</stringProp>
+              <stringProp name="1629">30</stringProp>
+            </collectionProp>
+            <collectionProp name="1926085600">
+              <stringProp name="56">8</stringProp>
+              <stringProp name="51">3</stringProp>
+              <stringProp name="48625">100</stringProp>
+            </collectionProp>
+            <collectionProp name="1925910028">
+              <stringProp name="51">3</stringProp>
+              <stringProp name="51">3</stringProp>
+              <stringProp name="48687">120</stringProp>
+            </collectionProp>
+          </collectionProp>
+        </kg.apc.jmeter.timers.VariableThroughputTimer>
+        <hashTree/>
         <RunTime guiclass="RunTimeGui" testclass="RunTime" testname="Warmup Homo" enabled="true">
-          <stringProp name="RunTime.seconds">240</stringProp>
+          <stringProp name="RunTime.seconds">239</stringProp>
         </RunTime>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Compute Homogenous Growth MeasurementPhase" enabled="true">
@@ -103,21 +128,10 @@
             <stringProp name="HTTPSampler.connect_timeout"></stringProp>
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
           </HTTPSamplerProxy>
-          <hashTree>
-            <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Growth" enabled="true">
-              <collectionProp name="load_profile">
-                <collectionProp name="1926184336">
-                  <stringProp name="48">0</stringProp>
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="49710">240</stringProp>
-                </collectionProp>
-              </collectionProp>
-            </kg.apc.jmeter.timers.VariableThroughputTimer>
-            <hashTree/>
-          </hashTree>
+          <hashTree/>
         </hashTree>
         <RunTime guiclass="RunTimeGui" testclass="RunTime" testname="Measurement Homo" enabled="true">
-          <stringProp name="RunTime.seconds">130</stringProp>
+          <stringProp name="RunTime.seconds">129</stringProp>
         </RunTime>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Compute Homogenous Growth MeasurementPhase" enabled="true">
@@ -139,21 +153,6 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
           </HTTPSamplerProxy>
           <hashTree>
-            <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Growth" enabled="true">
-              <collectionProp name="load_profile">
-                <collectionProp name="141474369">
-                  <stringProp name="56">8</stringProp>
-                  <stringProp name="56">8</stringProp>
-                  <stringProp name="1629">30</stringProp>
-                </collectionProp>
-                <collectionProp name="1926085600">
-                  <stringProp name="56">8</stringProp>
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="48625">100</stringProp>
-                </collectionProp>
-              </collectionProp>
-            </kg.apc.jmeter.timers.VariableThroughputTimer>
-            <hashTree/>
             <ResultCollector guiclass="GraphVisualizer" testclass="ResultCollector" testname="Ergebnisse" enabled="true">
               <boolProp name="ResultCollector.error_logging">false</boolProp>
               <objProp>
@@ -231,7 +230,7 @@
           </hashTree>
         </hashTree>
         <RunTime guiclass="RunTimeGui" testclass="RunTime" testname="CoolDown Homo" enabled="true">
-          <stringProp name="RunTime.seconds">120</stringProp>
+          <stringProp name="RunTime.seconds">119</stringProp>
         </RunTime>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Compute Homogenous Growth CoolDown" enabled="true">
@@ -252,18 +251,7 @@
             <stringProp name="HTTPSampler.connect_timeout"></stringProp>
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
           </HTTPSamplerProxy>
-          <hashTree>
-            <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Growth" enabled="true">
-              <collectionProp name="load_profile">
-                <collectionProp name="1925910028">
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="48687">120</stringProp>
-                </collectionProp>
-              </collectionProp>
-            </kg.apc.jmeter.timers.VariableThroughputTimer>
-            <hashTree/>
-          </hashTree>
+          <hashTree/>
         </hashTree>
         <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.TransactionsPerSecondGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="Requests per second (graph)" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
@@ -436,7 +424,7 @@
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <stringProp name="LoopController.loops">1</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">200</stringProp>
+        <stringProp name="ThreadGroup.num_threads">300</stringProp>
         <stringProp name="ThreadGroup.ramp_time">100</stringProp>
         <boolProp name="ThreadGroup.scheduler">false</boolProp>
         <stringProp name="ThreadGroup.duration"></stringProp>
@@ -444,8 +432,33 @@
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
       </ThreadGroup>
       <hashTree>
+        <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Growth" enabled="true">
+          <collectionProp name="load_profile">
+            <collectionProp name="1926184336">
+              <stringProp name="48">0</stringProp>
+              <stringProp name="51">3</stringProp>
+              <stringProp name="49710">240</stringProp>
+            </collectionProp>
+            <collectionProp name="86972">
+              <stringProp name="56">8</stringProp>
+              <stringProp name="56">8</stringProp>
+              <stringProp name="1629">30</stringProp>
+            </collectionProp>
+            <collectionProp name="133813">
+              <stringProp name="56">8</stringProp>
+              <stringProp name="51">3</stringProp>
+              <stringProp name="48625">100</stringProp>
+            </collectionProp>
+            <collectionProp name="129070">
+              <stringProp name="51">3</stringProp>
+              <stringProp name="51">3</stringProp>
+              <stringProp name="48687">120</stringProp>
+            </collectionProp>
+          </collectionProp>
+        </kg.apc.jmeter.timers.VariableThroughputTimer>
+        <hashTree/>
         <RunTime guiclass="RunTimeGui" testclass="RunTime" testname="Warmup Homo" enabled="true">
-          <stringProp name="RunTime.seconds">240</stringProp>
+          <stringProp name="RunTime.seconds">239</stringProp>
         </RunTime>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Compute Homogenous Growth MeasurementPhase" enabled="true">
@@ -473,21 +486,10 @@
             <stringProp name="HTTPSampler.connect_timeout"></stringProp>
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
           </HTTPSamplerProxy>
-          <hashTree>
-            <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Growth" enabled="true">
-              <collectionProp name="load_profile">
-                <collectionProp name="1926184336">
-                  <stringProp name="48">0</stringProp>
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="49710">240</stringProp>
-                </collectionProp>
-              </collectionProp>
-            </kg.apc.jmeter.timers.VariableThroughputTimer>
-            <hashTree/>
-          </hashTree>
+          <hashTree/>
         </hashTree>
         <RunTime guiclass="RunTimeGui" testclass="RunTime" testname="Measurement Hetero" enabled="true">
-          <stringProp name="RunTime.seconds">130</stringProp>
+          <stringProp name="RunTime.seconds">129</stringProp>
         </RunTime>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Compute Heterogenous Growth MeasurementPhase" enabled="true">
@@ -590,25 +592,10 @@
               <stringProp name="filename">BurstCallListHetero.csv</stringProp>
             </ResultCollector>
             <hashTree/>
-            <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Burst" enabled="true">
-              <collectionProp name="load_profile">
-                <collectionProp name="141474369">
-                  <stringProp name="56">8</stringProp>
-                  <stringProp name="56">8</stringProp>
-                  <stringProp name="1629">30</stringProp>
-                </collectionProp>
-                <collectionProp name="1926085600">
-                  <stringProp name="56">8</stringProp>
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="48625">100</stringProp>
-                </collectionProp>
-              </collectionProp>
-            </kg.apc.jmeter.timers.VariableThroughputTimer>
-            <hashTree/>
           </hashTree>
         </hashTree>
         <RunTime guiclass="RunTimeGui" testclass="RunTime" testname="CoolDown Hetero" enabled="true">
-          <stringProp name="RunTime.seconds">120</stringProp>
+          <stringProp name="RunTime.seconds">119</stringProp>
         </RunTime>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Compute Heterogenous Growth CoolDown" enabled="true">
@@ -636,18 +623,7 @@
             <stringProp name="HTTPSampler.connect_timeout"></stringProp>
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
           </HTTPSamplerProxy>
-          <hashTree>
-            <kg.apc.jmeter.timers.VariableThroughputTimer guiclass="kg.apc.jmeter.timers.VariableThroughputTimerGui" testclass="kg.apc.jmeter.timers.VariableThroughputTimer" testname="Measurementphase Timer Growth" enabled="true">
-              <collectionProp name="load_profile">
-                <collectionProp name="1925910028">
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="51">3</stringProp>
-                  <stringProp name="48687">120</stringProp>
-                </collectionProp>
-              </collectionProp>
-            </kg.apc.jmeter.timers.VariableThroughputTimer>
-            <hashTree/>
-          </hashTree>
+          <hashTree/>
         </hashTree>
         <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.TransactionsPerSecondGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="Requests per second (graph)" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
