@@ -21,7 +21,7 @@
           </elementProp>
           <elementProp name="endpoint_host" elementType="Argument">
             <stringProp name="Argument.name">endpoint_host</stringProp>
-            <stringProp name="Argument.value">172.17.0.1</stringProp>
+	    <stringProp name="Argument.value">ec2-54-161-211-41.compute-1.amazonaws.com</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
             <stringProp name="Argument.desc">Hostname or IP address of the endpoint</stringProp>
           </elementProp>
@@ -63,10 +63,6 @@
           <elementProp name="&quot;Content-Type&quot;" elementType="Header">
             <stringProp name="Header.name">Content-Type</stringProp>
             <stringProp name="Header.value">application/json</stringProp>
-          </elementProp>
-          <elementProp name="" elementType="Header">
-            <stringProp name="Header.name">User-Agent</stringProp>
-            <stringProp name="Header.value">OpenWhisk-CLI/1.0 (2020-02-25T19:20:55.482+0000) darwin amd64</stringProp>
           </elementProp>
         </collectionProp>
       </HeaderManager>
@@ -408,7 +404,7 @@
             <stringProp name="HTTPSampler.port">${endpoint_port}</stringProp>
             <stringProp name="HTTPSampler.protocol">${endpoint_protocol}</stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/namespaces/_/actions/sleepSeq?blocking=true&amp;result=true</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/namespaces/_/actions/sleepSeq?blocking=false&amp;result=false</stringProp>
             <stringProp name="HTTPSampler.method">POST</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">true</boolProp>
