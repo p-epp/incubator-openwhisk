@@ -28,6 +28,7 @@ import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.util.Try
 
+
 sealed trait WorkerState
 case object Busy extends WorkerState
 case object Free extends WorkerState
@@ -133,6 +134,8 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
       // next request to process
       // It is guaranteed, that only the first message on the buffer is present.
       if (runBuffer.isEmpty || isResentFromBuffer) {
+
+
         val createdContainer =
           // Is there enough space on the invoker for this action to be executed.
           if (hasPoolSpaceFor(busyPool, r.action.limits.memory.megabytes.MB)) {
@@ -280,6 +283,17 @@ class ContainerPool(childFactory: ActorRefFactory => ActorRef,
 
 
         createdContainer match {
+          case Some((_, containerState)) if List("warmed", "warming", "warmingCold").contains(containerState) =>
+            //If there is an eligible Container available, there is nothing really to do here.
+            logging.info(this, s"Aborting Init because of Warm available Container")
+            if (isResentFromBuffer) {
+              // It is guaranteed that the currently executed messages is the head of the queue, if the message comes
+              // from the buffer
+              val (_, newBuffer) = runBuffer.dequeue
+              runBuffer = newBuffer
+              processBufferOrFeed()
+            }
+
           case Some(((actor, data), containerState)) =>
             //increment active count before storing in pool map
             val newData = data.nextRun(Initialize(i.action, i.msg, i.retryLogDeadline))

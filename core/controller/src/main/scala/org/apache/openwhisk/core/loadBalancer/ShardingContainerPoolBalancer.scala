@@ -259,6 +259,7 @@ class ShardingContainerPoolBalancer(
           s"failed to schedule activation ${msg.activationId}, action '${msg.action.asString}' ($actionType), ns '${msg.user.namespace.name.asString}' - invokers to use: $invokerStates")
         Future.failed(LoadBalancerException("No invokers available"))
       }
+    
   }
 
   protected def sendInitializationToInvoker(producer: MessageProducer,

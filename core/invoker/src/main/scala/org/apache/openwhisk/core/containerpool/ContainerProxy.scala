@@ -450,7 +450,7 @@ class ContainerProxy(factory: (TransactionId,
       implicit val transid = job.msg.transid
       activeCount += 1
       initializeIt(data.container, job)
-        .map(_=> InitCompleted)
+        .map(_=> RunCompleted)
         .pipeTo(self)
 
       goto(Running) using PreWarmedData(data.container, data.kind, data.memoryLimit, 1)
@@ -502,16 +502,6 @@ class ContainerProxy(factory: (TransactionId,
       //in case concurrency supported, multiple runs can begin as soon as init is complete
       context.parent ! NeedWork(data)
       stay using data
-
-
-    // Init was successful
-    case Event(InitCompleted, data : WarmedData) =>
-      activeCount -= 1
-      if (requestWork(data) || activeCount > 0) {
-        stay using data
-      } else {
-        goto(Ready) using data
-      }
 
     // Run was successful
     case Event(RunCompleted, data: WarmedData) =>

@@ -329,7 +329,6 @@ class InvokerReactive(
                 }
 
                 initializationFeed ! MessageFeed.Processed
-                Future.successful(())
 
                 val activation = generateFallbackActivation(msg, response)
                 ackInit(
@@ -378,7 +377,7 @@ class InvokerReactive(
    *
    * Set the kind annotation to `Exec.UNKNOWN` since it is not known to the invoker because the action fetch failed.
    */
-  private def generateFallbackActivation(msg: ActivationMessage, response: ActivationResponse): WhiskActivation = {
+  def generateFallbackActivation(msg: ActivationMessage, response: ActivationResponse): WhiskActivation = {
     val now = Instant.now
     val causedBy = if (msg.causedBySequence) {
       Some(Parameters(WhiskActivation.causedByAnnotation, JsString(Exec.SEQUENCE)))
